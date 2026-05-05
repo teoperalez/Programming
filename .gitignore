@@ -1,0 +1,14 @@
+# Ignore everything by default — this is a meta-repo. Each sibling project
+# folder has its own git repo and must NOT be tracked here.
+*
+
+# Re-include only the meta-repo's own files
+!.gitignore
+!README.md
+!AGENTS.md
+!GTPUSH.md
+!PUBLIC_RELEASE.md
+!TODO.md
+!repos.json
+!bootstrap.ps1
+!bootstrap.sh

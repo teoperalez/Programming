@@ -1,0 +1,38 @@
+{
+  "comment": "Manifest of all sibling projects under F:\\Programming. Used by bootstrap.ps1 / bootstrap.sh to clone everything onto a fresh machine. Edit by hand when adding/removing projects.",
+  "owner": "teoperalez",
+  "repos": [
+    { "folder": "AhShuckie",                   "remote": "https://github.com/teoperalez/AhShuckie.git",                   "branch": "main" },
+    { "folder": "bg-removal-hybrid",           "remote": "https://github.com/teoperalez/bg-removal-hybrid.git",           "branch": "main" },
+    { "folder": "bg-removal-review",           "remote": "https://github.com/teoperalez/bg-removal-review.git",           "branch": "main" },
+    { "folder": "bg-removal-touchup",          "remote": "https://github.com/teoperalez/bg-removal-touchup.git",          "branch": "main" },
+    { "folder": "DailyMembersUpdater",         "remote": "https://github.com/teoperalez/DailyMembersUpdater.git",         "branch": "main" },
+    { "folder": "Discord Bot",                 "remote": "https://github.com/teoperalez/Discord-Bot.git",                 "branch": "main" },
+    { "folder": "EarningsAnalyticsAggregator", "remote": "https://github.com/teoperalez/EarningsAnalyticsAggregator.git", "branch": "main" },
+    { "folder": "Emerald Rom Builder",         "remote": "https://github.com/teoperalez/Emerald-Rom-Builder.git",         "branch": "main" },
+    { "folder": "FamilyMedia",                 "remote": "https://github.com/teoperalez/FamilyMedia.git",                 "branch": "main" },
+    { "folder": "FileOrganizer",               "remote": "https://github.com/teoperalez/FileOrganizer.git",               "branch": "main" },
+    { "folder": "gemma-agent",                 "remote": "https://github.com/teoperalez/gemma-agent.git",                 "branch": "main" },
+    { "folder": "GSCNewLayout",                "remote": "https://github.com/teoperalez/GSCNewLayout.git",                "branch": "test" },
+    { "folder": "IRLPC Hyperframes",           "remote": "https://github.com/teoperalez/IRLPC-Hyperframes.git",           "branch": "main" },
+    { "folder": "MSCS",                        "remote": "https://github.com/teoperalez/MSCS.git",                        "branch": "main" },
+    { "folder": "pokemon-exp-calculator",      "remote": "https://github.com/teoperalez/pokemon-exp-calculator.git",      "branch": "main" },
+    { "folder": "PokemonOfficialArtwork",      "remote": "https://github.com/teoperalez/PokemonOfficialArtwork.git",      "branch": "main" },
+    { "folder": "PokerSolver",                 "remote": "https://github.com/teoperalez/PokerSolver.git",                 "branch": "main" },
+    { "folder": "RBY-GameHook",                "remote": "https://github.com/teoperalez/RBY-GameHook.git",                "branch": "main" },
+    { "folder": "RBYNewLayout",                "remote": "https://github.com/teoperalez/RBY-Layout-2026.git",             "branch": "main" },
+    { "folder": "RBYNewLayout-components",     "remote": "https://github.com/teoperalez/RBY-Layout-2026.git",             "branch": "refactor/componentize" },
+    { "folder": "RBYPC2025/GSC-Member-Picks",  "remote": "https://github.com/teoperalez/GSC-Member-Picks.git",            "branch": "main" },
+    { "folder": "RBYPC2025/RBY-Member-Picks",  "remote": "https://github.com/teoperalez/RBY-Member-Picks.git",            "branch": "main" },
+    { "folder": "RSENewLayout",                "remote": "https://github.com/teoperalez/RSE-Layout-2026.git",             "branch": "main" },
+    { "folder": "TeoPeralez.com",              "remote": "https://github.com/teoperalez/TeoPeralez.com.git",              "branch": "main" },
+    { "folder": "YTBiz",                       "remote": "https://github.com/teoperalez/YTBiz.git",                       "branch": "main" }
+  ],
+  "skipped": [
+    { "folder": "Cygwin64",                "reason": "third-party runtime, not source" },
+    { "folder": "GSCNewLayout-test",       "reason": "node_modules only, no source" },
+    { "folder": "Hyperframes",             "reason": "intentionally local-only (detached HEAD, no remote)" },
+    { "folder": "img2video-workflow",      "reason": "32 GB ComfyUI install, too large for git" },
+    { "folder": "Scott Gen 3 overlay code","reason": "2.2 GB, not yet versioned" }
+  ]
+}
