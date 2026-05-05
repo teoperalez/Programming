@@ -12,3 +12,6 @@
 !repos.json
 !bootstrap.ps1
 !bootstrap.sh
+!claude-offline.bat
+!claude-offline-gui.ps1
+!litellm-config.yaml

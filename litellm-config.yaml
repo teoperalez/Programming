@@ -1,0 +1,12 @@
+# LiteLLM proxy config for Claude Code → Ollama offline mode.
+# The GUI rewrites this file dynamically when you click "Start Proxy",
+# so manual edits here only matter if you run litellm directly.
+
+model_list:
+  - model_name: glm4
+    litellm_params:
+      model: ollama/glm4
+      api_base: http://localhost:11434
+
+general_settings:
+  master_key: sk-offline-local
