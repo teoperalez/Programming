@@ -39,6 +39,21 @@ ok=0
 skipped=0
 failed=()
 
+run_project_setup() {
+  local dest="$1"
+  local folder="$2"
+  local setup_script="$dest/setup.sh"
+  [[ -f "$setup_script" ]] || return 0
+  echo "  [setup] Running setup.sh..."
+  chmod +x "$setup_script"
+  if bash "$setup_script" "$dest"; then
+    :
+  else
+    echo "  [setup] FAILED" >&2
+    failed+=("$folder (setup)")
+  fi
+}
+
 # Read repos as TSV: folder<TAB>remote<TAB>branch
 while IFS=$'\t' read -r folder remote branch; do
   if [[ "$USE_SSH" == "1" ]]; then
@@ -59,6 +74,7 @@ while IFS=$'\t' read -r folder remote branch; do
     echo "  exists, fetching + checking out $branch"
     if (cd "$dest" && git fetch --all --prune && git checkout "$branch" && git pull --ff-only); then
       ok=$((ok+1))
+      run_project_setup "$dest" "$folder"
     else
       echo "  FAILED" >&2
       failed+=("$folder")
@@ -69,6 +85,7 @@ while IFS=$'\t' read -r folder remote branch; do
   mkdir -p "$(dirname "$dest")"
   if git clone --branch "$branch" "$remote" "$dest"; then
     ok=$((ok+1))
+    run_project_setup "$dest" "$folder"
   else
     echo "  FAILED" >&2
     failed+=("$folder")

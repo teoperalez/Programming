@@ -17,6 +17,7 @@
     { "folder": "IRLPC Hyperframes",           "remote": "https://github.com/teoperalez/IRLPC-Hyperframes.git",           "branch": "main" },
     { "folder": "MSCS",                        "remote": "https://github.com/teoperalez/MSCS.git",                        "branch": "main" },
     { "folder": "pokemon-exp-calculator",      "remote": "https://github.com/teoperalez/pokemon-exp-calculator.git",      "branch": "main" },
+    { "folder": "resolve-mcp",                 "remote": "https://github.com/teoperalez/resolve-mcp.git",                 "branch": "main" },
     { "folder": "PokemonOfficialArtwork",      "remote": "https://github.com/teoperalez/PokemonOfficialArtwork.git",      "branch": "main" },
     { "folder": "PokerSolver",                 "remote": "https://github.com/teoperalez/PokerSolver.git",                 "branch": "main" },
     { "folder": "RBY-GameHook",                "remote": "https://github.com/teoperalez/RBY-GameHook.git",                "branch": "main" },
