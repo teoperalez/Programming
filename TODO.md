@@ -4,6 +4,43 @@ This file tracks high-priority to low-priority projects that will need AI assist
 
 ---
 
+## NEW. ai-band-composer — vocal/guitar → full band, local & free (scaffold)
+
+**Current Status (2026-05-21):**
+
+Scaffold committed on branch `claude/ai-band-composer-frshZ`. Approved
+design plan at `.claude/plans/i-want-to-create-snug-crayon.md`. Folder
+layout, Gradio UI shell, pyproject, and `src/compose/humanize.py` (with
+5 passing tests) are in place. All other pipeline modules are stubs
+with `NotImplementedError` and clear docstrings linking to the phase
+they belong to.
+
+Architecture (hybrid):
+- **Rhythm section** (drums/bass/keys) — Magenta GrooVAE/DrumsRNN/MusicVAE
+  → MIDI → FluidSynth + free SF2s. Per-stem editability, tempo-locked.
+- **Textural stems** (strings/pads/lead/brass) — ACE-Step 1.5 (MIT)
+  prompted per instrument with chord+chroma conditioning.
+- **Live Feel** humanization slider on all MIDI stems.
+- **Lyric-aware defaults** via faster-whisper + Ollama (Llama 3.1 8B).
+
+**Next Steps (phased):**
+
+1. **v0.1** — wire up `src/analyze/tempo_key.py` (madmom + librosa),
+   `src/compose/drums.py` (GrooVAE), `src/compose/render.py` (FluidSynth),
+   `src/mix/bus.py` (pyloudnorm + sum). Drums-only end-to-end pipeline.
+2. **v0.2** — add bass + keys generators. Per-stem re-roll wired in Mix tab.
+3. **v0.3** — `src/analyze/lyrics.py` (faster-whisper + Ollama JSON);
+   wire pre-fill into Compose tab defaults.
+4. **v0.4** — `src/compose/textures.py` (ACE-Step) + `src/mix/align.py`.
+5. **v0.5** — MSAF sections + per-section overrides.
+6. **v0.6** — presets, project save/load, `pywebview` native window.
+
+**Action item before any code beyond scaffold:** extract `ai-band-composer/`
+into its own repo at `github.com/teoperalez/ai-band-composer` per workspace
+convention. Steps documented in `ai-band-composer/README.md`.
+
+---
+
 ## 0. IRLPC Hyperframes — Revised 12-Step Pipeline (Path B, in progress)
 
 **Current Status (2026-05-01):**

@@ -2,6 +2,7 @@
   "comment": "Manifest of all sibling projects under F:\\Programming. Used by bootstrap.ps1 / bootstrap.sh to clone everything onto a fresh machine. Edit by hand when adding/removing projects.",
   "owner": "teoperalez",
   "repos": [
+    { "folder": "ai-band-composer",            "remote": "https://github.com/teoperalez/ai-band-composer.git",            "branch": "main" },
     { "folder": "AhShuckie",                   "remote": "https://github.com/teoperalez/AhShuckie.git",                   "branch": "main" },
     { "folder": "bg-removal-hybrid",           "remote": "https://github.com/teoperalez/bg-removal-hybrid.git",           "branch": "main" },
     { "folder": "bg-removal-review",           "remote": "https://github.com/teoperalez/bg-removal-review.git",           "branch": "main" },

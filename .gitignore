@@ -15,3 +15,10 @@
 !claude-offline.bat
 !claude-offline-gui.ps1
 !litellm-config.yaml
+
+# Project scaffold seeded by the remote-execution branch
+# claude/ai-band-composer-frshZ. Will be extracted into its own repo
+# at github.com/teoperalez/ai-band-composer once pulled to Windows;
+# this whitelist should be removed at that point.
+!ai-band-composer/
+!ai-band-composer/**
