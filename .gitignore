@@ -15,3 +15,7 @@
 !claude-offline.bat
 !claude-offline-gui.ps1
 !litellm-config.yaml
+
+# Portfolio site (4 self-contained HTML versions) lives in this meta-repo.
+!portfolio/
+!portfolio/**

@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Teo Peralez — Trainer Card Binder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root {
+  --binder: #1a2453;
+  --binder-2: #0b1235;
+  --gold: #ffcb05;
+  --red: #ee1515;
+  --blue: #3b4cca;
+  --ink: #1a1a1a;
+  --card-bg: #fefbe6;
+  --card-edge: #c9a440;
+  --label: #6b6675;
+  --display: 'Bungee', system-ui, sans-serif;
+  --ui: 'Inter', system-ui, sans-serif;
+  --pixel: 'Press Start 2P', monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--ui);
+  color: #eee;
+  background:
+    radial-gradient(1200px 800px at 20% 0%, #3a4ea7 0%, transparent 50%),
+    radial-gradient(1000px 700px at 80% 100%, #6b3a8c 0%, transparent 55%),
+    linear-gradient(180deg, #0b1235 0%, #060a22 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* binder cover background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 20px, transparent 20px 40px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,0.018) 0 20px, transparent 20px 40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container { max-width: 1320px; margin: 0 auto; padding: 36px 22px 80px; position: relative; z-index: 1; }
+
+/* binder header */
+.binder-top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px;
+  background: linear-gradient(180deg, var(--red) 0%, #b80c0c 100%);
+  border-radius: 14px 14px 0 0;
+  border: 3px solid var(--gold);
+  border-bottom: none;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 2;
+}
+.binder-top .logo {
+  font-family: var(--display);
+  font-size: clamp(20px, 3vw, 28px);
+  color: var(--gold);
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0 #5c0808;
+}
+.binder-top .logo span { color: #fff; }
+.binder-top .meta {
+  font-family: var(--pixel);
+  font-size: 9px;
+  color: #fff8d6;
+  text-align: right;
+  line-height: 1.6;
+}
+
+.binder-rings {
+  display: flex; justify-content: space-around;
+  padding: 6px 0;
+  background: #d4d4d4;
+  border-left: 3px solid var(--gold);
+  border-right: 3px solid var(--gold);
+}
+.binder-rings .ring {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 5%, #888 25%, #444 75%);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.5);
+}
+
+/* page */
+.page {
+  background: linear-gradient(180deg, #f8efd9 0%, #ead9a8 100%);
+  border: 3px solid var(--gold);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  padding: 28px 24px 36px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.4);
+  position: relative;
+}
+
+/* trainer card (hero) */
+.trainer-card {
+  position: relative;
+  margin: 0 auto 36px;
+  max-width: 880px;
+  background:
+    linear-gradient(135deg, #ffcb05 0%, #ff9b00 50%, #ffcb05 100%);
+  border: 4px solid #1a1a1a;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+  color: var(--ink);
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 18px;
+  overflow: hidden;
+}
+.trainer-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%);
+  background-size: 250% 100%;
+  background-position: 200% 0;
+  animation: shine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shine { 0%,100% { background-position: 200% 0; } 50% { background-position: -50% 0; } }
+
+.trainer-name {
+  font-family: var(--display);
+  font-size: clamp(32px, 5vw, 60px);
+  line-height: 0.95;
+  color: #1a1a1a;
+  text-shadow: 3px 3px 0 #fff, 5px 5px 0 #ee1515;
+  margin: 0 0 6px;
+}
+.trainer-sub {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: #1a1a1a;
+  margin-bottom: 18px;
+  letter-spacing: 0.05em;
+}
+.trainer-id {
+  font-family: var(--pixel);
+  font-size: 10px;
+  display: inline-block;
+  background: #1a1a1a;
+  color: var(--gold);
+  padding: 5px 9px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+.trainer-bio {
+  font-family: var(--ui);
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.55;
+  max-width: 460px;
+}
+.badges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-content: start;
+}
+.badge {
+  aspect-ratio: 1;
+  background: radial-gradient(circle at 30% 30%, #fff 0%, var(--bcolor, #ee1515) 60%, #5c0808 100%);
+  border: 3px solid #1a1a1a;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  text-align: center;
+  color: #fff;
+  font-family: var(--pixel);
+  font-size: 8px;
+  text-shadow: 1px 1px 0 #000;
+  box-shadow: inset -3px -3px 6px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.3);
+  position: relative;
+  cursor: default;
+  transition: transform .25s cubic-bezier(.2,1.4,.4,1);
+}
+.badge:hover { transform: scale(1.1) rotate(-4deg); }
+.badge small { display: block; font-size: 6px; opacity: 0.85; margin-top: 2px; }
+
+/* section header */
+.shelf-label {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 32px 0 16px;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed rgba(26,26,26,0.4);
+}
+.shelf-label h2 {
+  font-family: var(--display);
+  font-size: clamp(22px, 3vw, 32px);
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: 1px;
+}
+.shelf-label .pip {
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: #1a1a1a;
+}
+
+/* filter */
+.filterbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.filterbar button {
+  font-family: var(--pixel);
+  font-size: 9px;
+  padding: 8px 12px;
+  background: #fefbe6;
+  border: 2px solid #1a1a1a;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #1a1a1a;
+  letter-spacing: 0.05em;
+}
+.filterbar button.active { background: #1a1a1a; color: var(--gold); }
+
+/* card grid */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+/* card */
+.card {
+  perspective: 1200px;
+  aspect-ratio: 5 / 7;
+  cursor: pointer;
+  position: relative;
+}
+.card-inner {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d;
+  transition: transform .8s cubic-bezier(.4,.6,.2,1);
+}
+.card.flipped .card-inner { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.4),
+    inset 0 0 0 4px var(--ctype-bg, #ffcb05),
+    inset 0 0 0 6px #1a1a1a,
+    inset 0 0 0 8px #f5e6c0;
+  background: var(--card-bg);
+  display: flex; flex-direction: column;
+  padding: 14px 12px 12px;
+  color: #1a1a1a;
+}
+.card-face.back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, var(--ctype-bg, #ffcb05) 0%, #ffd24c 100%);
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  text-align: center;
+  font-family: var(--display);
+}
+.card-face.back h4 { margin: 0 0 8px; font-size: 18px; }
+.card-face.back p { font-family: var(--ui); font-size: 12px; line-height: 1.5; margin: 0; max-width: 220px; }
+.card-face.back .open-btn {
+  display: inline-block;
+  margin-top: 16px;
+  font-family: var(--pixel);
+  font-size: 9px;
+  padding: 7px 12px;
+  background: #1a1a1a;
+  color: var(--gold);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+/* holo shimmer overlay (mouse-tracked) */
+.holo {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.7) 47%, transparent 65%),
+    repeating-linear-gradient(115deg, rgba(255,0,150,0.18) 0 4px, rgba(0,180,255,0.18) 4px 8px, rgba(255,220,0,0.18) 8px 12px);
+  mix-blend-mode: color-dodge;
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+  background-size: 200% 200%;
+  background-position: var(--hx, 50%) var(--hy, 50%);
+}
+.card:hover .holo { opacity: 0.65; }
+.card:hover .card-inner { transform: translateY(-4px) rotateY(0deg); }
+.card.flipped:hover .card-inner { transform: rotateY(180deg); }
+
+/* card front content */
+.c-top {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--display);
+  margin-bottom: 6px;
+}
+.c-name { font-size: 16px; line-height: 1; letter-spacing: 0.5px; }
+.c-hp { font-size: 11px; color: var(--red); }
+.c-hp b { font-size: 22px; vertical-align: -2px; }
+
+.c-art {
+  flex: 1.1;
+  border: 2px solid #c9a440;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,0.65) 0%, transparent 50%),
+    linear-gradient(180deg, var(--ctype-bg, #ffcb05) 0%, #fff8d6 100%);
+  position: relative;
+  overflow: hidden;
+  display: grid; place-items: center;
+  margin-bottom: 8px;
+}
+.c-art .glyph {
+  font-size: clamp(48px, 7vw, 72px);
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.15));
+}
+.c-art .lvl {
+  position: absolute; top: 4px; right: 6px;
+  font-family: var(--pixel);
+  font-size: 8px;
+  background: rgba(0,0,0,0.7);
+  color: var(--gold);
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+.c-art .type-badges {
+  position: absolute; bottom: 6px; left: 6px;
+  display: flex; gap: 4px;
+}
+.type-badge {
+  font-family: var(--pixel);
+  font-size: 7px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  padding: 3px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.c-attacks { font-family: var(--ui); font-size: 11px; line-height: 1.35; }
+.c-attacks .atk {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(26,26,26,0.2);
+}
+.c-attacks .atk:last-child { border-bottom: none; }
+.c-attacks .atk-name { font-weight: 700; }
+.c-attacks .atk-dmg { font-family: var(--display); font-size: 13px; color: var(--red); }
+
+.c-foot {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(26,26,26,0.2);
+  font-family: var(--pixel);
+  font-size: 7px;
+  display: flex;
+  justify-content: space-between;
+  color: #6b6675;
+}
+
+/* type colorings (for the inner ring + back) */
+.t-overlay  { --ctype-bg: #ee1515; }
+.t-systems  { --ctype-bg: #4c9bff; }
+.t-ai       { --ctype-bg: #c084fc; }
+.t-web      { --ctype-bg: #ffcb05; }
+.t-rom      { --ctype-bg: #fb923c; }
+.t-tools    { --ctype-bg: #6cf4d2; }
+
+/* demo modal */
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center;
+  z-index: 100; padding: 24px;
+}
+.modal.open { display: flex; }
+.modal-box {
+  background: linear-gradient(180deg, #f8efd9 0%, #ead9a8 100%);
+  border: 4px solid var(--gold);
+  border-radius: 14px;
+  padding: 26px;
+  color: var(--ink);
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.modal-box h3 { font-family: var(--display); font-size: 22px; margin: 0 0 4px; }
+.modal-box .lede { font-family: var(--pixel); font-size: 9px; color: #6b6675; margin: 0 0 18px; }
+.modal-close {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--red); color: #fff;
+  border: 2px solid var(--ink);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  font-family: var(--display);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* demo styles inside modal */
+.demo-stage { font-family: var(--ui); font-size: 14px; }
+.demo-stage label { display: block; font-family: var(--pixel); font-size: 9px; color: #6b6675; margin: 8px 0 4px; }
+.demo-stage select, .demo-stage input[type=range] { width: 100%; padding: 8px; border: 2px solid var(--ink); border-radius: 6px; background: #fff; font: inherit; }
+.dmg-out {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--ink);
+  color: var(--gold);
+  border-radius: 10px;
+  font-family: var(--pixel);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.dmg-bar { background: #333; height: 22px; border-radius: 4px; overflow: hidden; margin-top: 8px; border: 2px solid var(--gold); }
+.dmg-bar > div { height: 100%; background: linear-gradient(90deg, #22c55e 0%, #eab308 50%, #ee1515 100%); transition: width .5s; }
+
+/* memory grid demo */
+.mem-stage { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 12px; padding: 12px; background: var(--ink); border-radius: 8px; }
+.mem-stage div { aspect-ratio: 1; background: rgba(255,203,5,0.15); border-radius: 1px; }
+.mem-stage div.hot { background: var(--red); }
+.mem-stage div.warm { background: var(--gold); }
+.mem-evts { margin-top: 8px; font-family: var(--pixel); font-size: 9px; color: var(--gold); background: var(--ink); padding: 8px; border-radius: 6px; min-height: 60px; }
+.mem-ctl { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.mem-ctl button { font-family: var(--pixel); font-size: 9px; padding: 6px 10px; border: 2px solid var(--ink); background: #fff; border-radius: 999px; cursor: pointer; }
+.mem-ctl button.active { background: var(--ink); color: var(--gold); }
+
+/* exp curve canvas */
+canvas#exp-curve { width: 100%; height: 220px; background: #fff; border: 2px solid var(--ink); border-radius: 8px; }
+.exp-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* contact pin */
+.contact-pin {
+  margin-top: 28px;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 18px; flex-wrap: wrap;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold) 0%, #ff9b00 100%);
+  border: 3px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.contact-pin a { color: var(--ink); text-decoration: none; }
+.contact-pin a:hover { text-decoration: underline wavy var(--red); }
+.contact-pin .links { display: flex; gap: 16px; font-family: var(--ui); font-size: 13px; }
+
+.footer-pixel {
+  margin-top: 22px;
+  text-align: center;
+  font-family: var(--pixel);
+  font-size: 9px;
+  color: rgba(255,255,255,0.5);
+}
+
+@media (max-width: 700px) {
+  .trainer-card { grid-template-columns: 1fr; }
+  .badges { grid-template-columns: repeat(8, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="binder-top">
+    <div class="logo"><span>TEO</span> · PORTFOLIO BINDER</div>
+    <div class="meta">SET — RUN 26<br>TRAINER ID #2026·05</div>
+  </div>
+  <div class="binder-rings">
+    <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+  </div>
+
+  <div class="page">
+
+    <!-- TRAINER CARD -->
+    <div class="trainer-card">
+      <div>
+        <h1 class="trainer-name">TEO PERALEZ</h1>
+        <div class="trainer-id">TRAINER ID · 2026·05 · OPEN TO WORK</div>
+        <p class="trainer-sub">FRONTEND ENGINEER · POLYGLOT · SPEEDRUNNER</p>
+        <p class="trainer-bio">
+          A frontend engineer who builds the rare kind of UI: real-time, data-heavy, and tied to a system underneath that you can actually feel. Speedrun overlays, emulator hooks, video pipelines, solvers, websites. Twenty-six shipped repos. Flip any card to play.
+        </p>
+      </div>
+      <div class="badges">
+        <div class="badge" style="--bcolor:#ee1515">REACT<small>×9</small></div>
+        <div class="badge" style="--bcolor:#3b4cca">TS<small>×9</small></div>
+        <div class="badge" style="--bcolor:#22c55e">NODE<small>×7</small></div>
+        <div class="badge" style="--bcolor:#a855f7">C#<small>×3</small></div>
+        <div class="badge" style="--bcolor:#f59e0b">RUST<small>×2</small></div>
+        <div class="badge" style="--bcolor:#06b6d4">NEXT<small>×4</small></div>
+        <div class="badge" style="--bcolor:#ec4899">FFMPEG<small>×3</small></div>
+        <div class="badge" style="--bcolor:#84cc16">ELECTRON<small>×4</small></div>
+      </div>
+    </div>
+
+    <!-- FILTER -->
+    <div class="shelf-label">
+      <h2>★ FEATURED CARDS · SET 01</h2>
+      <span class="pip">↑ click any card to flip · then OPEN to play</span>
+    </div>
+    <div class="filterbar" id="filterbar">
+      <button class="active" data-type="all">ALL</button>
+      <button data-type="t-overlay">FIRE · OVERLAYS</button>
+      <button data-type="t-systems">WATER · SYSTEMS</button>
+      <button data-type="t-ai">PSYCHIC · AI</button>
+      <button data-type="t-web">ELECTRIC · WEB</button>
+      <button data-type="t-rom">GROUND · ROM</button>
+      <button data-type="t-tools">GRASS · TOOLS</button>
+    </div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="contact-pin">
+      <div>★ CHALLENGE THE GYM LEADER</div>
+      <div class="links">
+        <a href="mailto:teoperalez@gmail.com">teoperalez@gmail.com</a>
+        <a href="https://github.com/teoperalez">github.com/teoperalez</a>
+        <a href="https://teoperalez.com">teoperalez.com</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-pixel">© 2026 · Pokémon, the binder aesthetic, and the typeface choices are an homage — not an affiliation. All code is mine.</div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close">×</button>
+    <h3 id="modal-title">—</h3>
+    <p class="lede" id="modal-sub">—</p>
+    <div class="demo-stage" id="modal-stage"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- card data ---------- */
+const CARDS = [
+  { name:'RBYNewLayout',    glyph:'⚡', type:'t-overlay', hp:'120', lvl:'Lv. 78', tags:['Electron','React'], demo:'damage',
+    desc:'Gen 1 Pokémon speedrun overlay. Damage calc, OBS markers, run logger.',
+    attacks: [
+      ['Battle Tracker',   '50'],
+      ['Damage Preview',   '80'],
+      ['OBS Marker',       '—'],
+    ] },
+  { name:'GSCNewLayout',    glyph:'🌙', type:'t-overlay', hp:'140', lvl:'Lv. 82', tags:['Electron','Gen 2'], demo:'damage',
+    desc:'Gen 2 overlay. Full damage calculator (STAB, screens, burn, weather). Win + macOS portable.',
+    attacks: [
+      ['Damage Formula',   '120'],
+      ['Tier List View',   '60'],
+      ['Hidden Power Calc','50'],
+    ] },
+  { name:'RSENewLayout',    glyph:'🔥', type:'t-overlay', hp:'110', lvl:'Lv. 74', tags:['Electron','Gen 3'], demo:'about',
+    desc:'Gen 3 RSE overlay. Trainer mapping, post-gym tier cards, cross-platform build.',
+    attacks: [
+      ['Trainer Map',      '70'],
+      ['Auto Marker',      '40'],
+      ['Tier Card',        '50'],
+    ] },
+  { name:'RBY-GameHook',    glyph:'🪝', type:'t-systems', hp:'200', lvl:'Lv. 95', tags:['.NET 8','WPF'], demo:'mem',
+    desc:'WPF + WebAPI memory poller for emulators. 600 Hz tap, auto-updater feed.',
+    attacks: [
+      ['Shared Mem Poll',  '160'],
+      ['Event Fire',       '90'],
+      ['Auto-Updater',     '—'],
+    ] },
+  { name:'AhShuckie',       glyph:'🐚', type:'t-systems', hp:'180', lvl:'Lv. 90', tags:['Rust','GPL-3'], demo:'about',
+    desc:'Hard fork of supershuckie. REST API for replay record/playback, unlocked-speed emu.',
+    attacks: [
+      ['REST Recorder',    '120'],
+      ['Replay Inject',    '100'],
+      ['Unlocked Run',     '80'],
+    ] },
+  { name:'IRLPC Hyperframes', glyph:'🎬', type:'t-ai', hp:'160', lvl:'Lv. 88', tags:['LLM','FFmpeg'], demo:'flow',
+    desc:'12-step AI video pipeline. Transcribe → classify → script → audit → render → FCPXML.',
+    attacks: [
+      ['LLM Orchestrate',  '130'],
+      ['Approval Gate',    '60'],
+      ['Build FCPXML',     '100'],
+    ] },
+  { name:'PokerSolver',     glyph:'♠', type:'t-tools', hp:'130', lvl:'Lv. 76', tags:['Solver','TS'], demo:'poker',
+    desc:'Hold’em solver. Strategy mapping, background solve scheduler, equity tools.',
+    attacks: [
+      ['Range Mapper',     '90'],
+      ['Monte-Carlo',      '70'],
+      ['IP/OOP Tree',      '60'],
+    ] },
+  { name:'bg-removal-hybrid', glyph:'✂', type:'t-tools', hp:'100', lvl:'Lv. 65', tags:['CV','Python'], demo:'about',
+    desc:'Hybrid bg-removal: model + chroma fallback. Sibling apps for review & touchup.',
+    attacks: [
+      ['Auto Mask',        '70'],
+      ['Edge Feather',     '50'],
+      ['Review Mode',      '30'],
+    ] },
+  { name:'pokemon-exp-calculator', glyph:'📈', type:'t-web', hp:'90', lvl:'Lv. 60', tags:['Web','Math'], demo:'exp',
+    desc:'EXP curves + gain calculator. Vue/web build, shipped as a static site.',
+    attacks: [
+      ['Curve Lookup',     '40'],
+      ['Gain From Trainer','50'],
+      ['Compare Mons',     '40'],
+    ] },
+  { name:'TeoPeralez.com',  glyph:'🏠', type:'t-web', hp:'100', lvl:'Lv. 70', tags:['Next.js'], demo:'about',
+    desc:'Personal site. Also hosts the GameHook AutoUpdater.xml at /gamehook/.',
+    attacks: [
+      ['Static Site',      '60'],
+      ['Auto-Update XML',  '40'],
+    ] },
+  { name:'Discord-Bot',     glyph:'🤖', type:'t-tools', hp:'80', lvl:'Lv. 55', tags:['Node'], demo:'about',
+    desc:'Community Discord bot, queued for free-tier deployment.',
+    attacks: [
+      ['Command Router',   '40'],
+      ['Slash Commands',   '50'],
+    ] },
+  { name:'FileOrganizer',   glyph:'🗃', type:'t-tools', hp:'95', lvl:'Lv. 62', tags:['AI','Node'], demo:'about',
+    desc:'Video transcription + LLM tagging. Auto-renames by content; groups by project.',
+    attacks: [
+      ['Whisper Pass',     '60'],
+      ['LLM Tag',          '50'],
+      ['Auto Rename',      '40'],
+    ] },
+  { name:'GSC-Member-Picks',glyph:'🏆', type:'t-web', hp:'110', lvl:'Lv. 70', tags:['Next.js','Web'], demo:'about',
+    desc:'Membership site for the GSC community. Tierlists, status screens, downloads.',
+    attacks: [
+      ['Tier List',        '60'],
+      ['Free + Paid DL',   '50'],
+    ] },
+  { name:'RBY-Member-Picks',glyph:'🏅', type:'t-web', hp:'105', lvl:'Lv. 68', tags:['Next.js'], demo:'about',
+    desc:'Sibling membership site for the RBY community.',
+    attacks: [
+      ['Picks Tracker',    '60'],
+      ['Status Screen',    '40'],
+    ] },
+  { name:'Emerald-Rom-Builder', glyph:'💎', type:'t-rom', hp:'130', lvl:'Lv. 78', tags:['GBA','ROM'], demo:'about',
+    desc:'Pokémon Emerald ROM build pipeline. Patches, build env, scripted releases.',
+    attacks: [
+      ['Patch Pipeline',   '80'],
+      ['Hex Tweaker',      '60'],
+    ] },
+  { name:'resolve-mcp',     glyph:'🎞', type:'t-tools', hp:'85', lvl:'Lv. 58', tags:['MCP','Node'], demo:'about',
+    desc:'Model Context Protocol server for DaVinci Resolve. Lets agents drive the edit.',
+    attacks: [
+      ['Open Project',     '40'],
+      ['Insert Clip',      '50'],
+    ] },
+  { name:'YTBiz',           glyph:'⏱', type:'t-tools', hp:'95', lvl:'Lv. 62', tags:['Logger'], demo:'about',
+    desc:'Productivity logger. Hooks into overlay & DaVinci Resolve, tracks idle time.',
+    attacks: [
+      ['Idle Detect',      '40'],
+      ['Per-Project Log',  '50'],
+    ] },
+  { name:'gemma-agent',     glyph:'🧠', type:'t-ai', hp:'100', lvl:'Lv. 65', tags:['LLM','Local'], demo:'about',
+    desc:'Local LLM agent. Experiments with offline workflows and tool use.',
+    attacks: [
+      ['Tool Use',         '50'],
+      ['Offline Run',      '40'],
+    ] },
+  { name:'EarningsAnalyticsAggregator', glyph:'📊', type:'t-tools', hp:'95', lvl:'Lv. 60', tags:['ETL'], demo:'about',
+    desc:'Earnings scraper + normalizer across platforms. Spits into one dashboard.',
+    attacks: [
+      ['Scrape',           '40'],
+      ['Normalize',        '50'],
+    ] },
+  { name:'DailyMembersUpdater', glyph:'🔁', type:'t-tools', hp:'70', lvl:'Lv. 48', tags:['Cron'], demo:'about',
+    desc:'Daily cron syncing member lists across platforms.',
+    attacks: [
+      ['Cron Run',         '30'],
+      ['Diff + Apply',     '40'],
+    ] },
+  { name:'PokemonOfficialArtwork', glyph:'🎨', type:'t-tools', hp:'80', lvl:'Lv. 55', tags:['Assets'], demo:'about',
+    desc:'Asset pipeline for overlay artwork. Naming, hashing, deduping.',
+    attacks: [
+      ['Asset Pipeline',   '40'],
+      ['Dedupe',           '40'],
+    ] },
+  { name:'bg-removal-review', glyph:'👀', type:'t-tools', hp:'85', lvl:'Lv. 57', tags:['CV','GUI'], demo:'about',
+    desc:'Batch-approval GUI for background-removal output. Click yes/no fast.',
+    attacks: [
+      ['Batch Review',     '40'],
+      ['Keyboard Mode',    '30'],
+    ] },
+  { name:'bg-removal-touchup', glyph:'🖌', type:'t-tools', hp:'85', lvl:'Lv. 57', tags:['CV','Brush'], demo:'about',
+    desc:'Manual touch-up tool with brush + threshold sliders.',
+    attacks: [
+      ['Brush Tool',       '40'],
+      ['Threshold',        '30'],
+    ] },
+  { name:'FamilyMedia',     glyph:'📷', type:'t-tools', hp:'80', lvl:'Lv. 50', tags:['Media'], demo:'about',
+    desc:'Personal media organizer. EXIF, folder rules, dedupe.',
+    attacks: [
+      ['EXIF Sort',        '40'],
+      ['Dedupe',           '30'],
+    ] },
+  { name:'MSCS',            glyph:'🎓', type:'t-tools', hp:'70', lvl:'Lv. 42', tags:['School'], demo:'about',
+    desc:'Master’s coursework: algorithms, OS, ML.',
+    attacks: [
+      ['Algo HW',          '30'],
+      ['ML Project',       '40'],
+    ] },
+  { name:'RBY-Layout-2026 refactor', glyph:'🧩', type:'t-overlay', hp:'120', lvl:'Lv. 76', tags:['Refactor','TS'], demo:'about',
+    desc:'Ongoing componentize/refactor branch of the Gen 1 overlay.',
+    attacks: [
+      ['Component Split',  '60'],
+      ['State Hoist',      '50'],
+    ] },
+];
+
+/* ---------- render cards ---------- */
+const grid = document.getElementById('cards');
+function renderCards(filter='all'){
+  grid.innerHTML = '';
+  CARDS.filter(c => filter==='all' || c.type===filter).forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'card ' + c.type;
+    card.style.animation = `pop .5s ${i*0.04}s both cubic-bezier(.2,1.4,.4,1)`;
+    card.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face front">
+          <div class="c-top">
+            <span class="c-name">${c.name.toUpperCase()}</span>
+            <span class="c-hp">HP <b>${c.hp}</b></span>
+          </div>
+          <div class="c-art">
+            <span class="glyph">${c.glyph}</span>
+            <span class="lvl">${c.lvl}</span>
+            <span class="type-badges">${c.tags.map(t=>`<span class="type-badge">${t}</span>`).join('')}</span>
+          </div>
+          <div class="c-attacks">
+            ${c.attacks.map(([n,d])=>`<div class="atk"><span class="atk-name">${n}</span><span class="atk-dmg">${d}</span></div>`).join('')}
+          </div>
+          <div class="c-foot">
+            <span>#${String(CARDS.indexOf(c)+1).padStart(3,'0')} / 026</span>
+            <span>★ teoperalez</span>
+          </div>
+          <div class="holo"></div>
+        </div>
+        <div class="card-face back">
+          <h4>${c.name}</h4>
+          <p>${c.desc}</p>
+          <a class="open-btn" data-demo="${c.demo}" data-name="${c.name}">▶ open</a>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('open-btn')) {
+        openDemo(e.target.dataset.demo, e.target.dataset.name);
+        return;
+      }
+      card.classList.toggle('flipped');
+    });
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+      const holo = card.querySelector('.holo');
+      holo.style.setProperty('--hx', x + '%');
+      holo.style.setProperty('--hy', y + '%');
+    });
+    grid.append(card);
+  });
+}
+renderCards();
+
+/* filter */
+document.getElementById('filterbar').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#filterbar button').forEach(b => b.classList.toggle('active', b===e.target));
+  renderCards(e.target.dataset.type);
+});
+
+/* ---------- modal + demos ---------- */
+const modal = document.getElementById('modal');
+const mTitle = document.getElementById('modal-title');
+const mSub = document.getElementById('modal-sub');
+const mStage = document.getElementById('modal-stage');
+document.getElementById('modal-close').addEventListener('click', () => modal.classList.remove('open'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+function openDemo(kind, name){
+  mTitle.textContent = name;
+  mSub.textContent = '★ live demo · all code runs in your browser';
+  mStage.innerHTML = '';
+  modal.classList.add('open');
+  if (kind === 'damage') renderDamage();
+  else if (kind === 'poker') renderPoker();
+  else if (kind === 'mem') renderMem();
+  else if (kind === 'flow') renderFlow();
+  else if (kind === 'exp') renderExp();
+  else renderAbout(name);
+}
+
+/* about fallback */
+function renderAbout(name){
+  const c = CARDS.find(x=>x.name===name);
+  mStage.innerHTML = `
+    <div style="padding:14px; background:#fff; border:2px solid #1a1a1a; border-radius:10px;">
+      <p style="margin:0 0 10px;">${c.desc}</p>
+      <p style="margin:0; font-family:var(--pixel); font-size:9px;">tags: ${c.tags.join(' · ')}</p>
+      <a style="display:inline-block; margin-top:14px; padding:8px 14px; background:#1a1a1a; color:#ffcb05; text-decoration:none; border-radius:999px; font-family:var(--pixel); font-size:9px;" href="https://github.com/teoperalez/${encodeURIComponent(name.split(' ')[0])}">↗ view on github</a>
+    </div>
+  `;
+}
+
+/* damage calc demo */
+function renderDamage(){
+  const MON = { Gengar:{atk:165,spa:244,hp:261,t:['Ghost']}, Venusaur:{atk:189,spa:222,hp:364,t:['Grass']}, Snorlax:{atk:350,spa:200,hp:523,t:['Normal']}, Alakazam:{atk:154,spa:295,hp:261,t:['Psychic']} };
+  const MV = { Thunderbolt:{p:95,t:'Electric',c:'sp'}, Earthquake:{p:100,t:'Ground',c:'ph'}, Psychic:{p:90,t:'Psychic',c:'sp'}, 'Body Slam':{p:85,t:'Normal',c:'ph'} };
+  const EFF = { Electric:{Water:2,Flying:2,Ground:0,Grass:0.5}, Ground:{Fire:2,Electric:2,Rock:2,Flying:0,Grass:0.5}, Psychic:{Fighting:2,Psychic:0.5,Dark:0}, Normal:{Ghost:0,Rock:0.5} };
+  mStage.innerHTML = `
+    <label>Attacker</label>
+    <select id="dd-atk">${Object.keys(MON).map(k=>`<option>${k}</option>`).join('')}</select>
+    <label>Defender</label>
+    <select id="dd-def">${Object.keys(MON).map((k,i)=>`<option ${i===1?'selected':''}>${k}</option>`).join('')}</select>
+    <label>Move</label>
+    <select id="dd-mv">${Object.keys(MV).map(k=>`<option>${k}</option>`).join('')}</select>
+    <div class="dmg-out" id="dd-out">—</div>
+    <div class="dmg-bar"><div id="dd-fill" style="width:0%"></div></div>
+  `;
+  function run(){
+    const a = MON[mStage.querySelector('#dd-atk').value];
+    const d = MON[mStage.querySelector('#dd-def').value];
+    const m = MV[mStage.querySelector('#dd-mv').value];
+    const A = m.c==='sp'? a.spa : a.atk;
+    const D = m.c==='sp'? d.spa : d.atk;
+    let dmg = (((42)*m.p*A/D)/50) + 2;
+    const eff = (EFF[m.t]||{})[d.t[0]] ?? 1;
+    dmg *= eff;
+    const lo = Math.floor(dmg*0.85), hi = Math.floor(dmg);
+    const pct = Math.min(100, Math.round(hi/d.hp*100));
+    const ko = lo >= d.hp ? '1-shot KO' : `${Math.ceil(d.hp/hi)}-hit KO`;
+    mStage.querySelector('#dd-out').innerHTML =
+      `ATK ▸ ${a.atk} / SPA ${a.spa}<br>DEF ▸ HP ${d.hp}<br>MOVE ▸ ${m.p} BP · ${m.t}<br>EFF ▸ ×${eff}<br>DMG ▸ ${lo}–${hi} (${pct}%)<br>RESULT ▸ ${ko}`;
+    mStage.querySelector('#dd-fill').style.width = pct + '%';
+  }
+  ['dd-atk','dd-def','dd-mv'].forEach(id => mStage.querySelector('#'+id).addEventListener('change', run));
+  run();
+}
+
+/* poker demo (simplified % indicator) */
+function renderPoker(){
+  const cards = ['AA','KK','QQ','AKs','AKo','AQs','TT','99','22','72o','J9s','65s'];
+  // rough preflop equity vs random (approx, hand-tuned)
+  const equity = { AA:85, KK:82, QQ:80, AKs:67, AKo:65, AQs:66, TT:75, '99':72, '22':50, '72o':32, J9s:54, '65s':58 };
+  mStage.innerHTML = `
+    <label>Pick a starting hand</label>
+    <select id="ph">${cards.map(c=>`<option>${c}</option>`).join('')}</select>
+    <div class="dmg-out" id="po"></div>
+    <div class="dmg-bar"><div id="pf" style="width:0%"></div></div>
+    <p style="font-family:var(--pixel); font-size:9px; color:#6b6675; margin-top:10px;">★ pre-flop equity vs a random hand · the real PokerSolver runs a full Monte-Carlo across every flop, turn &amp; river.</p>
+  `;
+  function r(){
+    const v = mStage.querySelector('#ph').value;
+    const e = equity[v];
+    mStage.querySelector('#po').innerHTML = `HAND ▸ ${v}<br>EQUITY ▸ ${e}% vs random<br>VERDICT ▸ ${e>=70?'★★★ premium':e>=55?'★★ playable':e>=40?'★ marginal':'×  fold'}`;
+    mStage.querySelector('#pf').style.width = e + '%';
+  }
+  mStage.querySelector('#ph').addEventListener('change', r);
+  r();
+}
+
+/* memory poller demo */
+function renderMem(){
+  mStage.innerHTML = `
+    <p style="font-family:var(--pixel); font-size:9px; color:#6b6675;">▼ PokeAByte shared memory · 0x0000–0x017F · live tap</p>
+    <div class="mem-stage" id="ms"></div>
+    <div class="mem-ctl" id="mc">
+      <button data-r="60">60 Hz</button>
+      <button data-r="200">200 Hz</button>
+      <button data-r="600" class="active">600 Hz</button>
+    </div>
+    <div class="mem-evts" id="me">> waiting for events…</div>
+  `;
+  const stage = mStage.querySelector('#ms');
+  const N = 24 * 12;
+  for (let i=0;i<N;i++) stage.append(document.createElement('div'));
+  const cells = stage.children;
+  const evts = mStage.querySelector('#me');
+  let timer = null;
+  const start = (hz) => {
+    if (timer) clearInterval(timer);
+    timer = setInterval(() => {
+      const idx = Math.random()*N|0;
+      const v = Math.random();
+      cells[idx].className = v > 0.95 ? 'hot' : v > 0.7 ? 'warm' : '';
+      if (v > 0.985) {
+        const ev = `> [${new Date().toISOString().slice(11,19)}] EVT battle_started addr=0x0014`;
+        evts.innerHTML = ev + '<br>' + evts.innerHTML.split('<br>').slice(0,4).join('<br>');
+      }
+    }, 1000/hz);
+  };
+  start(600);
+  mStage.querySelector('#mc').addEventListener('click', e => {
+    if (e.target.tagName !== 'BUTTON') return;
+    [...mStage.querySelectorAll('#mc button')].forEach(b => b.classList.toggle('active', b===e.target));
+    start(+e.target.dataset.r);
+  });
+}
+
+/* hyperframes flow */
+function renderFlow(){
+  const steps = ['transcribe','classify','research','fetch assets','skeleton plan','section scripts','audit','storyboard','approval gate','render clips','build fcpxml','resolve edit'];
+  mStage.innerHTML = `
+    <p style="font-family:var(--pixel); font-size:9px; color:#6b6675;">▼ 12-step LLM pipeline · tap a step</p>
+    <div id="flow-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+    <div class="dmg-out" id="flow-out" style="margin-top:14px;">↑ tap a step to inspect</div>
+  `;
+  const grid = mStage.querySelector('#flow-grid');
+  const out = mStage.querySelector('#flow-out');
+  const detail = {
+    transcribe:'whisper.cpp → transcribe.json',
+    classify:'gpt-4o-mini · A-roll vs B-roll · loudness + filename hints',
+    research:'gpt-4o-mini · tidbits + titling hooks',
+    'fetch assets':'pexels + openverse → assets/',
+    'skeleton plan':'claude sonnet 4.6 · interactive Q&A',
+    'section scripts':'gpt-4o-mini · short scripts per section',
+    audit:'claude sonnet 4.6 · --strict review',
+    storyboard:'html node-graph w/ hyperframes iframes',
+    'approval gate':'express + react @ :5173',
+    'render clips':'≤30s caps · auto-halving',
+    'build fcpxml':'1.11 · 4 tracks (V1 hf / V2 a / V3 b / A1)',
+    'resolve edit':'manual finishing pass'
+  };
+  steps.forEach((s,i) => {
+    const b = document.createElement('button');
+    b.textContent = (i+1).toString().padStart(2,'0')+' '+s;
+    b.style.cssText = 'font-family:var(--pixel);font-size:8px;padding:8px 6px;background:#fff;border:2px solid #1a1a1a;border-radius:6px;cursor:pointer;text-align:left;';
+    b.onclick = () => { out.innerHTML = `STEP ${i+1} ▸ ${s.toUpperCase()}<br>${detail[s]}`; };
+    grid.append(b);
+  });
+}
+
+/* pokemon exp curve */
+function renderExp(){
+  mStage.innerHTML = `
+    <p style="font-family:var(--pixel); font-size:9px; color:#6b6675;">▼ EXP needed to reach a level · 4 growth groups</p>
+    <canvas id="exp-curve"></canvas>
+    <div class="exp-controls" style="margin-top:10px;">
+      <div>
+        <label>Group</label>
+        <select id="grp"><option>fast</option><option selected>medium-fast</option><option>medium-slow</option><option>slow</option></select>
+      </div>
+      <div>
+        <label>Level <span id="lv-show" style="font-family:var(--pixel);font-size:9px;">50</span></label>
+        <input id="lv" type="range" min="2" max="100" value="50">
+      </div>
+    </div>
+    <div class="dmg-out" id="exp-out">—</div>
+  `;
+  const cv = mStage.querySelector('#exp-curve'); const ctx = cv.getContext('2d');
+  cv.width = cv.clientWidth; cv.height = cv.clientHeight;
+  function expFor(group, n){
+    if (group==='fast') return Math.floor(0.8 * n**3);
+    if (group==='medium-fast') return n**3;
+    if (group==='medium-slow') return Math.floor(1.2 * n**3 - 15*n**2 + 100*n - 140);
+    return Math.floor(1.25 * n**3);
+  }
+  function draw(){
+    const g = mStage.querySelector('#grp').value;
+    const l = +mStage.querySelector('#lv').value;
+    mStage.querySelector('#lv-show').textContent = l;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+    // axes
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 1;
+    for (let x = 0; x < cv.width; x += cv.width/10){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,cv.height); ctx.stroke(); }
+    for (let y = 0; y < cv.height; y += cv.height/5){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cv.width,y); ctx.stroke(); }
+    // curve
+    const maxExp = expFor(g, 100);
+    ctx.strokeStyle = '#ee1515'; ctx.lineWidth = 3; ctx.beginPath();
+    for (let n=1; n<=100; n++){
+      const x = (n/100) * cv.width;
+      const y = cv.height - (expFor(g,n)/maxExp) * cv.height;
+      n===1 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    // marker
+    const mx = (l/100)*cv.width;
+    const my = cv.height - (expFor(g,l)/maxExp) * cv.height;
+    ctx.fillStyle = '#3b4cca'; ctx.beginPath(); ctx.arc(mx,my,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold 11px Inter'; ctx.fillText(`L${l} · ${expFor(g,l).toLocaleString()} EXP`, mx+10, my-6);
+    mStage.querySelector('#exp-out').innerHTML = `GROUP ▸ ${g}<br>LEVEL ▸ ${l}<br>TOTAL EXP ▸ ${expFor(g,l).toLocaleString()}<br>TO NEXT LV ▸ ${(expFor(g,l+1)-expFor(g,l)).toLocaleString()}`;
+  }
+  mStage.querySelector('#grp').addEventListener('change', draw);
+  mStage.querySelector('#lv').addEventListener('input', draw);
+  draw();
+}
+
+/* pop-in keyframe */
+const sheet = document.createElement('style');
+sheet.textContent = '@keyframes pop { from { opacity:0; transform: translateY(20px) scale(.9);} to { opacity:1; transform: translateY(0) scale(1);} }';
+document.head.append(sheet);
+</script>
+
+</body>
+</html>

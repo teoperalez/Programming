@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Teo Peralez — pick a portfolio</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #0b0b10; color: #ece8df; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { display: grid; place-items: center; padding: 40px 24px; }
+  .wrap { max-width: 1100px; width: 100%; }
+  h1 { font-size: clamp(36px, 6vw, 80px); line-height: 1; letter-spacing: -0.03em; margin: 0 0 12px; font-weight: 700; }
+  h1 em { font-style: italic; font-weight: 400; font-family: Georgia, serif; color: #ffd24c; }
+  p.sub { color: #aaa3b1; max-width: 60ch; margin: 0 0 48px; font-size: 17px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+  a.card {
+    display: block; padding: 22px; border-radius: 14px; text-decoration: none;
+    color: inherit; border: 1px solid rgba(255,255,255,0.1);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    transition: transform .25s, border-color .25s, background .25s;
+  }
+  a.card:hover { transform: translateY(-3px); border-color: #ff5a3c; background: linear-gradient(180deg, rgba(255,90,60,0.08), rgba(255,90,60,0)); }
+  a.card .num { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.2em; color: #6b6675; text-transform: uppercase; }
+  a.card .title { font-size: 22px; margin: 8px 0 6px; font-weight: 600; }
+  a.card .desc { font-size: 13px; color: #aaa3b1; line-height: 1.5; }
+  a.card .swatch { display: flex; gap: 6px; margin-top: 14px; }
+  a.card .swatch i { width: 18px; height: 18px; border-radius: 4px; }
+  footer { margin-top: 40px; font-family: ui-monospace, monospace; font-size: 12px; color: #6b6675; }
+  footer a { color: #aaa3b1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>four portfolios.<br/><em>same engineer, different rooms.</em></h1>
+  <p class="sub">I built four completely separate sites — no shared styles, no shared layouts. Each pitches the same 26 repos through a different lens. Pick the room you want to walk into.</p>
+
+  <div class="grid">
+    <a class="card" href="v1-terminal/index.html">
+      <div class="num">v1 · brutalist</div>
+      <div class="title">terminal</div>
+      <div class="desc">Yellow-on-black hacker shell. Type commands, get demos. ASCII art and crt scanlines.</div>
+      <div class="swatch"><i style="background:#000"></i><i style="background:#f5d300"></i><i style="background:#16a34a"></i><i style="background:#fff"></i></div>
+    </a>
+    <a class="card" href="v2-editorial/index.html">
+      <div class="num">v2 · editorial</div>
+      <div class="title">magazine</div>
+      <div class="desc">Cream paper, serif headlines, drop caps, asymmetric grid. Quiet luxury.</div>
+      <div class="swatch"><i style="background:#f3ecdf"></i><i style="background:#1b1b1b"></i><i style="background:#b9351a"></i><i style="background:#6b6b6b"></i></div>
+    </a>
+    <a class="card" href="v3-tradingcard/index.html">
+      <div class="num">v3 · holo</div>
+      <div class="title">trading cards</div>
+      <div class="desc">Each project is a Pokémon-style card with HP, attacks, type badges. Flip to play.</div>
+      <div class="swatch"><i style="background:#0c5cc5"></i><i style="background:#ffcb05"></i><i style="background:#ee1515"></i><i style="background:#3b4cca"></i></div>
+    </a>
+    <a class="card" href="v4-desktop/index.html">
+      <div class="num">v4 · spatial</div>
+      <div class="title">desktop OS</div>
+      <div class="desc">Draggable windows, dock, glass. Browse the portfolio like it's a finder window.</div>
+      <div class="swatch"><i style="background:#0f172a"></i><i style="background:#22d3ee"></i><i style="background:#a78bfa"></i><i style="background:#f472b6"></i></div>
+    </a>
+  </div>
+
+  <footer>built by Teo Peralez · <a href="mailto:teoperalez@gmail.com">teoperalez@gmail.com</a> · <a href="https://github.com/teoperalez">github.com/teoperalez</a></footer>
+</div>
+</body>
+</html>

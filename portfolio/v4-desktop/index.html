@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>teoOS — desktop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --hue: 250;
+  --bg: #050818;
+  --ink: #eef2ff;
+  --ink-dim: rgba(238,242,255,0.65);
+  --ink-mute: rgba(238,242,255,0.4);
+  --glass: rgba(20,24,45,0.55);
+  --glass-2: rgba(40,44,75,0.45);
+  --line: rgba(255,255,255,0.12);
+  --line-2: rgba(255,255,255,0.22);
+  --cyan: #22d3ee;
+  --violet: #a78bfa;
+  --pink: #f472b6;
+  --green: #4ade80;
+  --red: #fb7185;
+  --orange: #fb923c;
+  --amber: #f59e0b;
+  --ui: 'Inter Tight', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body {
+  font-family: var(--ui);
+  color: var(--ink);
+  background: var(--bg);
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+}
+
+/* desktop wallpaper */
+.wallpaper {
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(167,139,250,0.5) 0%, transparent 35%),
+    radial-gradient(circle at 80% 30%, rgba(34,211,238,0.45) 0%, transparent 35%),
+    radial-gradient(circle at 50% 90%, rgba(244,114,182,0.35) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(251,146,60,0.3) 0%, transparent 35%),
+    linear-gradient(180deg, #050818 0%, #0a0e2a 100%);
+  z-index: 0;
+}
+.wallpaper::after {
+  content:''; position:absolute; inset:0;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.4) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 80px 80px, 40px 40px;
+  background-position: 0 0, 40px 40px;
+  opacity: 0.45;
+  animation: drift 60s linear infinite;
+}
+@keyframes drift {
+  to { background-position: 80px 80px, 120px 120px; }
+}
+
+/* menu bar */
+.menubar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 28px;
+  background: rgba(8,10,30,0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; padding: 0 14px;
+  font-size: 13px;
+  z-index: 1000;
+  gap: 20px;
+}
+.menubar .apple { font-weight: 700; color: var(--ink); letter-spacing: -0.5px; }
+.menubar .app-name { font-weight: 600; }
+.menubar .item { color: var(--ink-dim); cursor: default; font-size: 12.5px; }
+.menubar .right { margin-left: auto; display: flex; gap: 16px; color: var(--ink-dim); font-size: 12px; }
+.menubar .right span:hover { color: var(--ink); }
+
+/* desktop area */
+.desktop { position: fixed; inset: 28px 0 80px 0; z-index: 1; }
+
+/* desktop icons (top right) */
+.icons {
+  position: absolute; top: 16px; right: 16px;
+  display: flex; flex-direction: column; gap: 18px;
+  z-index: 5;
+}
+.icon {
+  width: 86px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 10px;
+  transition: background .15s;
+}
+.icon:hover { background: rgba(255,255,255,0.08); }
+.icon .ig {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--igc, var(--violet)), color-mix(in srgb, var(--igc, var(--violet)) 60%, white));
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  font-size: 24px;
+}
+.icon .il { font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); text-align: center; }
+
+/* window */
+.win {
+  position: absolute;
+  background: var(--glass);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow:
+    0 30px 80px -10px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  overflow: hidden;
+  min-width: 280px; min-height: 200px;
+  display: flex; flex-direction: column;
+  transition: opacity .18s, transform .18s;
+}
+.win.minimized {
+  opacity: 0; transform: scale(0.6) translateY(200px); pointer-events: none;
+}
+.win-bar {
+  height: 30px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center;
+  padding: 0 12px;
+  font-size: 12px;
+  cursor: grab;
+  flex-shrink: 0;
+}
+.win-bar:active { cursor: grabbing; }
+.win-traffic { display: flex; gap: 7px; margin-right: 12px; }
+.win-traffic span {
+  width: 12px; height: 12px; border-radius: 50%;
+  cursor: pointer;
+}
+.win-traffic .c { background: #ff5f57; }
+.win-traffic .m { background: #febc2e; }
+.win-traffic .z { background: #28c840; }
+.win-title { flex: 1; text-align: center; color: var(--ink-dim); font-weight: 500; }
+.win-body { flex: 1; overflow: auto; padding: 18px 22px; font-size: 14px; line-height: 1.6; color: var(--ink); }
+.win-body::-webkit-scrollbar { width: 8px; }
+.win-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+/* finder window styles */
+.finder { padding: 0 !important; }
+.finder-side {
+  width: 180px; background: rgba(255,255,255,0.03);
+  border-right: 1px solid var(--line);
+  padding: 14px 10px; font-size: 12px;
+  overflow-y: auto;
+}
+.finder-side h5 { margin: 0 0 6px; color: var(--ink-mute); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+.finder-side .sb-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 5px; cursor: pointer; color: var(--ink-dim); }
+.finder-side .sb-item.active, .finder-side .sb-item:hover { background: rgba(255,255,255,0.08); color: var(--ink); }
+.finder-side .sb-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); }
+.finder-split { display: flex; flex: 1; min-height: 0; }
+.finder-main { flex: 1; overflow-y: auto; padding: 14px; }
+.finder-row {
+  display: grid; grid-template-columns: 28px 1fr 100px 140px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.finder-row:hover { background: rgba(255,255,255,0.07); }
+.finder-row .em { font-size: 16px; }
+.finder-row .nm { font-weight: 500; }
+.finder-row .sz { color: var(--ink-mute); font-family: var(--mono); font-size: 11px; }
+.finder-row .tg { color: var(--ink-dim); font-size: 11px; }
+.finder-row .pip { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+/* terminal */
+.term { background: rgba(0,0,0,0.55); font-family: var(--mono); font-size: 12.5px; color: #d4ffd4; padding: 16px !important; }
+.term .prompt { color: var(--cyan); }
+.term .out { color: rgba(255,255,255,0.7); }
+.term .ok { color: var(--green); }
+.term .warn { color: var(--amber); }
+.term .err { color: var(--red); }
+.term .line { white-space: pre-wrap; word-break: break-word; }
+.term .input-line { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.term input { background: transparent; border: none; color: #d4ffd4; font: inherit; outline: none; flex: 1; caret-color: var(--cyan); }
+.term-cursor::after { content:'▍'; color: var(--cyan); animation: blink 1.1s steps(1,end) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* readme / about */
+.readme h1 { font-size: 26px; margin: 0 0 6px; font-weight: 700; letter-spacing: -0.02em; }
+.readme .em { color: var(--ink-mute); font-size: 12px; font-family: var(--mono); margin-bottom: 14px; }
+.readme h2 { font-size: 14px; margin: 18px 0 6px; color: var(--cyan); font-weight: 600; letter-spacing: 0.02em; }
+.readme p { color: var(--ink-dim); font-size: 13.5px; margin: 0 0 10px; }
+.readme code { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; font-family: var(--mono); font-size: 12px; }
+.readme ul { padding-left: 18px; color: var(--ink-dim); font-size: 13px; }
+.readme a { color: var(--cyan); text-decoration: none; border-bottom: 1px solid rgba(34,211,238,0.4); }
+.readme a:hover { border-color: var(--cyan); }
+.readme .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 6px; }
+.readme .stat { background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.readme .stat b { display: block; font-size: 22px; font-weight: 700; }
+.readme .stat span { color: var(--ink-mute); font-size: 11px; }
+
+/* gh widget */
+.gh-list { font-family: var(--mono); font-size: 12px; }
+.gh-list .gh-row { padding: 10px 0; border-bottom: 1px solid var(--line); display: flex; gap: 14px; align-items: flex-start; }
+.gh-list .gh-row:last-child { border: none; }
+.gh-list .pip { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.gh-list .meta { color: var(--ink-mute); font-size: 11px; margin-top: 2px; }
+.gh-list .nm { color: var(--ink); font-weight: 600; }
+.gh-list .desc { color: var(--ink-dim); font-family: var(--ui); font-size: 12.5px; margin-top: 2px; }
+.gh-bar { display: flex; gap: 10px; font-size: 11px; margin-top: 6px; color: var(--ink-mute); }
+.gh-bar .lang { display: inline-flex; gap: 4px; align-items: center; }
+
+/* lab / demo window — damage calc */
+.lab label { display: block; font-size: 11px; color: var(--ink-mute); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+.lab select, .lab input[type=number] {
+  width: 100%; padding: 8px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  color: var(--ink);
+  font: inherit; font-size: 13px;
+}
+.lab select:focus { outline: none; border-color: var(--cyan); }
+.lab .checkrow { display: flex; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+.lab .checkrow label { display: inline-flex; align-items: center; gap: 5px; text-transform: none; margin: 0; font-size: 12px; color: var(--ink-dim); cursor: pointer; }
+.lab .checkrow input { accent-color: var(--cyan); }
+.lab-result {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, rgba(34,211,238,0.08), rgba(167,139,250,0.08));
+  border-radius: 10px;
+}
+.lab-result .num { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
+.lab-result .num .pct { font-size: 16px; color: var(--cyan); font-weight: 500; }
+.lab-result .verdict { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); margin-top: 4px; }
+.lab-bar { margin-top: 10px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.lab-bar > div { height: 100%; background: linear-gradient(90deg, var(--green), var(--amber) 60%, var(--red)); transition: width .4s cubic-bezier(.2,.6,.2,1); }
+
+/* activity monitor */
+.am-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.am-card { background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.am-card h5 { margin: 0 0 6px; font-size: 11px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+.am-card .v { font-size: 22px; font-weight: 700; }
+.am-spark { height: 36px; margin-top: 4px; }
+.am-list { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); margin-top: 14px; }
+.am-list .am-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.am-list .am-row span:last-child { color: var(--cyan); }
+
+/* dock */
+.dock {
+  position: fixed; bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 10px;
+  padding: 8px 10px;
+  background: rgba(20,24,45,0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--line-2);
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.1);
+  z-index: 1000;
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+}
+.dock-item {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  font-size: 26px;
+  position: relative;
+  background: linear-gradient(135deg, var(--dc, var(--violet)), color-mix(in srgb, var(--dc, var(--violet)) 55%, white));
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform .18s cubic-bezier(.3,1.5,.4,1);
+  flex-shrink: 0;
+}
+.dock-item:hover { transform: translateY(-8px) scale(1.15); }
+.dock-item:active { transform: translateY(-4px) scale(1.08); }
+.dock-item.has-open::after {
+  content: ''; position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%; background: var(--ink);
+}
+.dock-item .tt {
+  position: absolute; bottom: 64px;
+  background: rgba(0,0,0,0.85);
+  color: var(--ink);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+  font-family: var(--ui);
+}
+.dock-item:hover .tt { opacity: 1; }
+
+/* mini canvas */
+canvas.mini { width: 100%; height: 36px; display: block; }
+canvas.flow { width: 100%; height: 220px; display: block; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid var(--line); }
+
+/* responsive */
+@media (max-width: 800px) {
+  .icons { display: none; }
+  .win { width: calc(100vw - 24px) !important; left: 12px !important; }
+  .menubar .item { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wallpaper"></div>
+
+<!-- MENU BAR -->
+<div class="menubar">
+  <span class="apple">●</span>
+  <span class="app-name" id="active-app">Finder</span>
+  <span class="item">File</span>
+  <span class="item">Edit</span>
+  <span class="item">View</span>
+  <span class="item">Go</span>
+  <span class="item">Window</span>
+  <span class="item">Help</span>
+  <div class="right">
+    <span id="clock">--:--</span>
+    <span>📶</span>
+    <span>🔋 96%</span>
+  </div>
+</div>
+
+<!-- DESKTOP -->
+<div class="desktop" id="desktop">
+  <div class="icons">
+    <div class="icon" data-open="readme"><div class="ig" style="--igc:#22d3ee">📘</div><div class="il">about.md</div></div>
+    <div class="icon" data-open="finder"><div class="ig" style="--igc:#a78bfa">📂</div><div class="il">Projects</div></div>
+    <div class="icon" data-open="lab"><div class="ig" style="--igc:#f472b6">⚗️</div><div class="il">Damage Lab</div></div>
+    <div class="icon" data-open="terminal"><div class="ig" style="--igc:#4ade80">💻</div><div class="il">Terminal</div></div>
+    <div class="icon" data-open="monitor"><div class="ig" style="--igc:#fb923c">📊</div><div class="il">Activity</div></div>
+  </div>
+</div>
+
+<!-- DOCK -->
+<div class="dock" id="dock">
+  <div class="dock-item" data-open="readme" style="--dc:#22d3ee">📘<span class="tt">about.md</span></div>
+  <div class="dock-item" data-open="finder" style="--dc:#a78bfa">📂<span class="tt">Projects</span></div>
+  <div class="dock-item" data-open="lab" style="--dc:#f472b6">⚗️<span class="tt">Damage Lab</span></div>
+  <div class="dock-item" data-open="terminal" style="--dc:#4ade80">💻<span class="tt">Terminal</span></div>
+  <div class="dock-item" data-open="monitor" style="--dc:#fb923c">📊<span class="tt">Activity</span></div>
+  <div class="dock-item" data-open="mail" style="--dc:#f59e0b">✉️<span class="tt">Mail</span></div>
+  <div class="dock-item" data-open="github" style="--dc:#64748b">🐙<span class="tt">GitHub</span></div>
+</div>
+
+<script>
+/* ---------- clock ---------- */
+function tick(){
+  const d = new Date();
+  document.getElementById('clock').textContent =
+    d.toLocaleDateString('en-US',{weekday:'short', month:'short', day:'numeric'}) + ' ' +
+    d.toLocaleTimeString('en-US',{hour:'numeric', minute:'2-digit'});
+}
+setInterval(tick, 1000); tick();
+
+/* ---------- window manager ---------- */
+const desktop = document.getElementById('desktop');
+let zCounter = 10;
+const openWindows = new Map();
+
+const APPS = {
+  readme: { title: 'about.md — TextEdit', appName: 'TextEdit', w: 580, h: 540, x: 80, y: 80, render: renderReadme },
+  finder: { title: '~/Programming — Finder', appName: 'Finder', w: 720, h: 480, x: 200, y: 130, render: renderFinder, bodyClass: 'finder' },
+  lab:    { title: 'Damage Lab — Pokémon Gen 2', appName: 'Damage Lab', w: 460, h: 580, x: 340, y: 160, render: renderLab, bodyClass: 'lab' },
+  terminal: { title: 'teo@portfolio: ~ — zsh', appName: 'Terminal', w: 560, h: 360, x: 140, y: 220, render: renderTerm, bodyClass: 'term' },
+  monitor: { title: 'Activity Monitor', appName: 'Activity', w: 480, h: 460, x: 420, y: 100, render: renderMonitor },
+  mail:    { title: 'Compose — teoperalez@gmail.com', appName: 'Mail', w: 500, h: 360, x: 280, y: 180, render: renderMail },
+  github:  { title: 'github.com/teoperalez — Safari', appName: 'Safari', w: 620, h: 480, x: 240, y: 150, render: renderGithub },
+};
+
+function openApp(key){
+  // toggle: if already open, focus
+  if (openWindows.has(key)) {
+    const w = openWindows.get(key);
+    if (w.classList.contains('minimized')) {
+      w.classList.remove('minimized');
+    }
+    focus(w);
+    return;
+  }
+  const a = APPS[key];
+  const w = document.createElement('div');
+  w.className = 'win';
+  w.dataset.key = key;
+  const initX = Math.max(20, Math.min(window.innerWidth - a.w - 20, a.x + (openWindows.size * 30)));
+  const initY = Math.max(20, Math.min(window.innerHeight - a.h - 100, a.y + (openWindows.size * 30)));
+  w.style.left = initX + 'px';
+  w.style.top  = initY + 'px';
+  w.style.width  = Math.min(a.w, window.innerWidth - 40) + 'px';
+  w.style.height = Math.min(a.h, window.innerHeight - 140) + 'px';
+  w.innerHTML = `
+    <div class="win-bar">
+      <div class="win-traffic">
+        <span class="c" data-act="close"></span>
+        <span class="m" data-act="min"></span>
+        <span class="z" data-act="zoom"></span>
+      </div>
+      <div class="win-title">${a.title}</div>
+      <div style="width:54px;"></div>
+    </div>
+    <div class="win-body ${a.bodyClass||''}"></div>
+  `;
+  desktop.append(w);
+  openWindows.set(key, w);
+  focus(w);
+  makeDraggable(w);
+
+  w.querySelectorAll('.win-traffic span').forEach(s => {
+    s.addEventListener('click', e => {
+      e.stopPropagation();
+      if (s.dataset.act === 'close') closeApp(key);
+      else if (s.dataset.act === 'min') w.classList.toggle('minimized');
+      else { // zoom
+        if (w.dataset.zoomed) {
+          w.style.width = w.dataset.zoomed.split(',')[0] + 'px';
+          w.style.height = w.dataset.zoomed.split(',')[1] + 'px';
+          w.style.left = w.dataset.zoomed.split(',')[2] + 'px';
+          w.style.top  = w.dataset.zoomed.split(',')[3] + 'px';
+          delete w.dataset.zoomed;
+        } else {
+          w.dataset.zoomed = `${w.offsetWidth},${w.offsetHeight},${w.offsetLeft},${w.offsetTop}`;
+          w.style.left = '20px'; w.style.top = '20px';
+          w.style.width = (window.innerWidth - 40) + 'px';
+          w.style.height = (window.innerHeight - 130) + 'px';
+        }
+      }
+    });
+  });
+
+  // mark dock indicator
+  document.querySelectorAll(`.dock-item[data-open="${key}"]`).forEach(el => el.classList.add('has-open'));
+
+  a.render(w.querySelector('.win-body'), w);
+}
+function closeApp(key){
+  const w = openWindows.get(key);
+  if (!w) return;
+  w.style.opacity = '0';
+  w.style.transform = 'scale(0.85)';
+  setTimeout(() => w.remove(), 180);
+  openWindows.delete(key);
+  document.querySelectorAll(`.dock-item[data-open="${key}"]`).forEach(el => el.classList.remove('has-open'));
+}
+function focus(w){
+  w.style.zIndex = ++zCounter;
+  // update menubar app name
+  const key = w.dataset.key;
+  document.getElementById('active-app').textContent = APPS[key]?.appName || 'Finder';
+}
+function makeDraggable(w){
+  const bar = w.querySelector('.win-bar');
+  let sx, sy, ox, oy, drag = false;
+  const down = (cx, cy) => {
+    drag = true;
+    sx = cx; sy = cy;
+    ox = w.offsetLeft; oy = w.offsetTop;
+    focus(w);
+  };
+  const move = (cx, cy) => {
+    if (!drag) return;
+    w.style.left = Math.max(0, Math.min(window.innerWidth - 60, ox + cx - sx)) + 'px';
+    w.style.top  = Math.max(0, Math.min(window.innerHeight - 60, oy + cy - sy)) + 'px';
+  };
+  const up = () => { drag = false; };
+
+  bar.addEventListener('mousedown', e => {
+    if (e.target.closest('.win-traffic')) return;
+    down(e.clientX, e.clientY);
+    const m = e => move(e.clientX, e.clientY);
+    document.addEventListener('mousemove', m);
+    document.addEventListener('mouseup', () => { up(); document.removeEventListener('mousemove', m); }, { once: true });
+  });
+  bar.addEventListener('touchstart', e => {
+    if (e.target.closest('.win-traffic')) return;
+    down(e.touches[0].clientX, e.touches[0].clientY);
+    const m = e => move(e.touches[0].clientX, e.touches[0].clientY);
+    document.addEventListener('touchmove', m, { passive: true });
+    document.addEventListener('touchend', () => { up(); document.removeEventListener('touchmove', m); }, { once: true });
+  }, { passive: true });
+
+  w.addEventListener('mousedown', () => focus(w));
+}
+
+document.body.addEventListener('click', e => {
+  const t = e.target.closest('[data-open]');
+  if (t) openApp(t.dataset.open);
+});
+
+/* ---------- app renderers ---------- */
+
+function renderReadme(body){
+  body.classList.add('readme');
+  body.innerHTML = `
+    <h1>Teo Peralez</h1>
+    <div class="em">// frontend engineer · open to work · 2026</div>
+
+    <p>I build interfaces for systems that move data really fast. Pokémon speedrun overlays that read live emulator memory at 600 Hz. A poker solver that runs Monte-Carlo in a browser tab. A twelve-step AI video pipeline that emits FCPXML 1.11 for DaVinci Resolve. A .NET 8 memory poller that publishes its own auto-updater feed. Twenty-six public repos.</p>
+
+    <div class="stat-row">
+      <div class="stat"><b>26</b><span>repos shipped</span></div>
+      <div class="stat"><b>14</b><span>languages used</span></div>
+      <div class="stat"><b>600 Hz</b><span>peak poll rate</span></div>
+    </div>
+
+    <h2>## what i'm looking for</h2>
+    <p>A <code>frontend</code> role where the data flying around actually means something. Real-time. Heavy-state. Streams, sockets, telemetry, solvers. Happy on React / Next / Electron / vanilla. Remote-friendly.</p>
+
+    <h2>## what i ship</h2>
+    <ul>
+      <li>Electron + React speedrun overlays — three of them (Gen 1, 2, 3).</li>
+      <li>.NET 8 WPF + WebAPI memory poller (RBY-GameHook), single-file, auto-updating.</li>
+      <li>Rust emulator fork (AhShuckie) with REST API for deterministic replay record/playback.</li>
+      <li>12-step LLM video pipeline emitting FCPXML 1.11 for Resolve.</li>
+      <li>Next.js sites for a paid community: tierlists, status screens, downloads.</li>
+      <li>Hold'em solver, background scheduler, equity widgets.</li>
+      <li>Hybrid background-removal CV app + companion review/touchup GUIs.</li>
+    </ul>
+
+    <h2>## tour the desktop</h2>
+    <p>Open <code>Projects</code> in the dock for the full file tree. <code>Damage Lab</code> runs the actual Gen 2 damage formula. <code>Terminal</code> takes commands — try <code>ls</code> or <code>open hyperframes</code>. <code>Activity Monitor</code> shows simulated live polling. <code>Mail</code> drops you straight into a draft to me.</p>
+
+    <h2>## contact</h2>
+    <p>
+      <a href="mailto:teoperalez@gmail.com">teoperalez@gmail.com</a><br>
+      <a href="https://github.com/teoperalez">github.com/teoperalez</a><br>
+      <a href="https://teoperalez.com">teoperalez.com</a>
+    </p>
+  `;
+}
+
+const PROJECTS = [
+  { name:'RBYNewLayout',          em:'🎮', tag:'overlay',  pip:'#fb7185', size:'2.1 MB', summary:'Gen 1 Electron speedrun overlay.' },
+  { name:'GSCNewLayout',          em:'🌙', tag:'overlay',  pip:'#fb7185', size:'1.8 MB', summary:'Gen 2 overlay, full damage calc.' },
+  { name:'RSENewLayout',          em:'🔥', tag:'overlay',  pip:'#fb7185', size:'1.7 MB', summary:'Gen 3 RSE overlay, cross-platform.' },
+  { name:'RBY-GameHook',          em:'🪝', tag:'systems',  pip:'#22d3ee', size:'55 MB',  summary:'.NET 8 WPF memory poller.' },
+  { name:'AhShuckie',             em:'🐚', tag:'systems',  pip:'#22d3ee', size:'—',      summary:'Rust emulator fork, REST + replays.' },
+  { name:'IRLPC Hyperframes',     em:'🎬', tag:'ai',       pip:'#a78bfa', size:'—',      summary:'12-step AI video pipeline.' },
+  { name:'PokerSolver',           em:'♠️', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Hold\'em solver + scheduler.' },
+  { name:'bg-removal-hybrid',     em:'✂️', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Hybrid bg-removal (model + chroma).' },
+  { name:'bg-removal-review',     em:'👀', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Batch review GUI.' },
+  { name:'bg-removal-touchup',    em:'🖌️', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Manual touch-up tool.' },
+  { name:'pokemon-exp-calculator',em:'📈', tag:'web',      pip:'#f472b6', size:'—',      summary:'EXP curves + gain calc.' },
+  { name:'TeoPeralez.com',        em:'🏠', tag:'web',      pip:'#f472b6', size:'—',      summary:'Personal site + GameHook XML feed.' },
+  { name:'GSC-Member-Picks',      em:'🏆', tag:'web',      pip:'#f472b6', size:'—',      summary:'Membership site for GSC community.' },
+  { name:'RBY-Member-Picks',      em:'🏅', tag:'web',      pip:'#f472b6', size:'—',      summary:'Sibling membership site (RBY).' },
+  { name:'Discord-Bot',           em:'🤖', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Community Discord bot.' },
+  { name:'FileOrganizer',         em:'🗃️', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Video transcription + LLM tag.' },
+  { name:'Emerald-Rom-Builder',   em:'💎', tag:'rom',      pip:'#fb923c', size:'—',      summary:'Pokémon Emerald ROM pipeline.' },
+  { name:'resolve-mcp',           em:'🎞️', tag:'tools',    pip:'#4ade80', size:'—',      summary:'MCP server for DaVinci Resolve.' },
+  { name:'YTBiz',                 em:'⏱️', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Productivity logger.' },
+  { name:'gemma-agent',           em:'🧠', tag:'ai',       pip:'#a78bfa', size:'—',      summary:'Local LLM agent.' },
+  { name:'EarningsAnalyticsAggregator', em:'📊', tag:'tools', pip:'#4ade80', size:'—',  summary:'Earnings ETL across platforms.' },
+  { name:'DailyMembersUpdater',   em:'🔁', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Daily member-sync cron.' },
+  { name:'PokemonOfficialArtwork',em:'🎨', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Asset pipeline.' },
+  { name:'FamilyMedia',           em:'📷', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Personal media organizer.' },
+  { name:'MSCS',                  em:'🎓', tag:'tools',    pip:'#4ade80', size:'—',      summary:'Master\'s coursework.' },
+  { name:'RBY-Layout-2026 refactor', em:'🧩', tag:'overlay', pip:'#fb7185', size:'—',    summary:'Componentize refactor branch.' },
+];
+
+function renderFinder(body){
+  body.classList.add('finder');
+  body.innerHTML = `
+    <div class="finder-split">
+      <aside class="finder-side">
+        <h5>Favorites</h5>
+        <div class="sb-item active" data-f="all"><span class="dot" style="background:var(--cyan)"></span>All</div>
+        <div class="sb-item" data-f="overlay"><span class="dot" style="background:#fb7185"></span>Overlays</div>
+        <div class="sb-item" data-f="systems"><span class="dot" style="background:#22d3ee"></span>Systems</div>
+        <div class="sb-item" data-f="ai"><span class="dot" style="background:#a78bfa"></span>AI</div>
+        <div class="sb-item" data-f="web"><span class="dot" style="background:#f472b6"></span>Web</div>
+        <div class="sb-item" data-f="rom"><span class="dot" style="background:#fb923c"></span>ROM</div>
+        <div class="sb-item" data-f="tools"><span class="dot" style="background:#4ade80"></span>Tools</div>
+        <h5 style="margin-top:18px;">Tags</h5>
+        <div class="sb-item">🟢 GitHub Actions</div>
+        <div class="sb-item">⚡ Electron</div>
+        <div class="sb-item">🦀 Rust</div>
+        <div class="sb-item">📦 .NET 8</div>
+      </aside>
+      <main class="finder-main" id="finder-main"></main>
+    </div>
+  `;
+  function rows(filter){
+    const main = body.querySelector('#finder-main');
+    main.innerHTML = '';
+    PROJECTS.filter(p => filter==='all' || p.tag===filter).forEach(p => {
+      const r = document.createElement('div');
+      r.className = 'finder-row';
+      r.innerHTML = `<span class="em">${p.em}</span><span><span class="nm">${p.name}</span><br><span class="tg">${p.summary}</span></span><span class="sz">${p.size}</span><span class="tg"><span class="pip" style="background:${p.pip}"></span>${p.tag}</span>`;
+      r.addEventListener('dblclick', () => window.open(`https://github.com/teoperalez/${encodeURIComponent(p.name.split(' ')[0])}`, '_blank', 'noopener'));
+      main.append(r);
+    });
+  }
+  body.querySelectorAll('.sb-item[data-f]').forEach(el => {
+    el.addEventListener('click', () => {
+      body.querySelectorAll('.sb-item').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+      rows(el.dataset.f);
+    });
+  });
+  rows('all');
+}
+
+/* damage lab */
+function renderLab(body){
+  body.classList.add('lab');
+  const MON = {
+    Gengar:{atk:165,spa:244,hp:261,t:['Ghost','Poison']},
+    Venusaur:{atk:189,spa:222,hp:364,t:['Grass','Poison']},
+    Snorlax:{atk:350,spa:200,hp:523,t:['Normal']},
+    Alakazam:{atk:154,spa:295,hp:261,t:['Psychic']},
+    Machamp:{atk:343,spa:167,hp:343,t:['Fighting']},
+    Starmie:{atk:178,spa:247,hp:261,t:['Water','Psychic']},
+    Chansey:{atk:89,spa:222,hp:703,t:['Normal']},
+  };
+  const MV = {
+    Thunderbolt:{p:95,t:'Electric',c:'sp'},
+    Earthquake:{p:100,t:'Ground',c:'ph'},
+    Psychic:{p:90,t:'Psychic',c:'sp'},
+    'Body Slam':{p:85,t:'Normal',c:'ph'},
+    Surf:{p:95,t:'Water',c:'sp'},
+    'Ice Beam':{p:95,t:'Ice',c:'sp'},
+    'Shadow Ball':{p:80,t:'Ghost',c:'sp'},
+    'Cross Chop':{p:100,t:'Fighting',c:'ph'},
+  };
+  const EFF = {
+    Electric:{Water:2,Flying:2,Ground:0,Grass:0.5,Electric:0.5,Dragon:0.5},
+    Ground:{Fire:2,Electric:2,Rock:2,Poison:2,Flying:0,Grass:0.5},
+    Psychic:{Fighting:2,Poison:2,Psychic:0.5,Dark:0,Steel:0.5},
+    Normal:{Ghost:0,Rock:0.5,Steel:0.5},
+    Water:{Fire:2,Ground:2,Rock:2,Grass:0.5,Water:0.5},
+    Ice:{Grass:2,Ground:2,Flying:2,Dragon:2,Water:0.5,Fire:0.5},
+    Ghost:{Psychic:2,Ghost:2,Normal:0,Dark:0.5},
+    Fighting:{Normal:2,Ice:2,Rock:2,Dark:2,Steel:2,Ghost:0,Flying:0.5,Poison:0.5,Psychic:0.5},
+  };
+  function eff(mt, types){ const t = EFF[mt]||{}; return types.reduce((m,ty)=>m*(t[ty]??1), 1); }
+
+  body.innerHTML = `
+    <div style="font-size:11px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:0.1em;">From GSCNewLayout · the real Gen 2 formula</div>
+    <label>Attacker</label>
+    <select id="lab-atk">${Object.keys(MON).map(k=>`<option>${k}</option>`).join('')}</select>
+    <label>Move</label>
+    <select id="lab-mv">${Object.keys(MV).map(k=>`<option>${k}</option>`).join('')}</select>
+    <label>Defender</label>
+    <select id="lab-def">${Object.keys(MON).map((k,i)=>`<option ${i===1?'selected':''}>${k}</option>`).join('')}</select>
+    <div class="checkrow">
+      <label><input type="checkbox" id="lab-stab" checked> STAB</label>
+      <label><input type="checkbox" id="lab-crit"> Crit</label>
+      <label><input type="checkbox" id="lab-burn"> Burn</label>
+      <label><input type="checkbox" id="lab-scr"> Screen</label>
+      <label><input type="checkbox" id="lab-wx"> Weather</label>
+    </div>
+    <div class="lab-result">
+      <div class="num"><span id="lab-num">—</span> <span class="pct" id="lab-pct"></span></div>
+      <div class="verdict" id="lab-verdict">—</div>
+      <div class="lab-bar"><div id="lab-fill" style="width:0%"></div></div>
+    </div>
+    <div style="margin-top:14px; font-family:var(--mono); font-size:11px; color:var(--ink-mute);">
+      d = (((2·L/5+2) · P · A/D) / 50 + 2) · stab · type · crit · burn · screen · weather
+    </div>
+  `;
+  function run(){
+    const a = MON[body.querySelector('#lab-atk').value];
+    const d = MON[body.querySelector('#lab-def').value];
+    const m = MV[body.querySelector('#lab-mv').value];
+    const stab = body.querySelector('#lab-stab').checked && a.t.some(t => t === m.t);
+    const crit = body.querySelector('#lab-crit').checked;
+    const burn = body.querySelector('#lab-burn').checked;
+    const scr  = body.querySelector('#lab-scr').checked;
+    const wx   = body.querySelector('#lab-wx').checked;
+    const A = m.c==='sp' ? a.spa : a.atk;
+    const D = m.c==='sp' ? d.spa : d.atk;
+    let dmg = (((200/5 + 2) * m.p * A / D) / 50) + 2;
+    if (stab) dmg *= 1.5;
+    const x = eff(m.t, d.t);
+    dmg *= x;
+    if (crit) dmg *= 2;
+    if (burn && m.c==='ph') dmg *= 0.5;
+    if (scr) dmg *= 0.5;
+    if (wx) dmg *= 1.5;
+    const lo = Math.floor(dmg*0.85), hi = Math.floor(dmg);
+    const pct = Math.min(100, Math.round(hi/d.hp*100));
+    body.querySelector('#lab-num').textContent = `${lo}–${hi}`;
+    body.querySelector('#lab-pct').textContent = ` · ${pct}% HP`;
+    const ko = x===0 ? 'No effect' : lo >= d.hp ? '1-shot KO guaranteed' : hi >= d.hp ? 'roll for KO' : `${Math.ceil(d.hp/hi)}-hit KO @ ${x===1?'neutral':x>1?'super-effective ×'+x:'resisted ×'+x}`;
+    body.querySelector('#lab-verdict').textContent = ko;
+    body.querySelector('#lab-fill').style.width = pct + '%';
+  }
+  body.addEventListener('input', run);
+  body.addEventListener('change', run);
+  run();
+}
+
+/* terminal */
+function renderTerm(body){
+  body.classList.add('term');
+  body.innerHTML = `
+    <div id="t-log"></div>
+    <div class="input-line"><span class="prompt">teo@portfolio ~</span><span style="color:var(--green)">$</span><input id="t-in" autofocus autocomplete="off" spellcheck="false" /></div>
+  `;
+  const log = body.querySelector('#t-log');
+  const inp = body.querySelector('#t-in');
+  const print = (cls, text) => {
+    const d = document.createElement('div');
+    d.className = 'line ' + cls;
+    d.innerHTML = text;
+    log.append(d);
+    body.scrollTop = body.scrollHeight;
+  };
+  print('out', 'teoOS 1.0 — Friday Build · type <span style="color:var(--green)">help</span> to start');
+  const cmds = {
+    help(){ print('out','available: <span style="color:var(--green)">ls</span> · <span style="color:var(--green)">about</span> · <span style="color:var(--green)">stack</span> · <span style="color:var(--green)">open &lt;app&gt;</span> · <span style="color:var(--green)">contact</span> · <span style="color:var(--green)">clear</span>'); },
+    ls(){ print('out', PROJECTS.map(p => p.em + ' ' + p.name).join('  ')); },
+    about(){ print('out', "Teo Peralez — frontend engineer, open to work. I build UIs for hot loops: live emulator state, solvers, AI pipelines, speedrun overlays. 26 public repos. polyglot."); },
+    stack(){ print('out', "react · typescript · electron · next · node · c# / .net 8 · rust · python · ffmpeg · fcpxml · canvas · webgl · gha · wpf · z80"); },
+    contact(){ print('out', "mail: <a href='mailto:teoperalez@gmail.com' style='color:var(--cyan)'>teoperalez@gmail.com</a><br>gh: <a href='https://github.com/teoperalez' style='color:var(--cyan)'>github.com/teoperalez</a>"); },
+    open(args){
+      const k = (args[0]||'').toLowerCase();
+      const map = { readme:'readme', projects:'finder', finder:'finder', files:'finder', lab:'lab', damage:'lab', terminal:'terminal', activity:'monitor', monitor:'monitor', mail:'mail', github:'github', hyperframes:'finder' };
+      if (map[k]) { openApp(map[k]); print('ok', `→ opening ${k}`); }
+      else print('err', `unknown app: ${k}. try: readme, projects, lab, terminal, activity, mail, github`);
+    },
+    clear(){ log.innerHTML = ''; },
+  };
+  cmds.h = cmds.help; cmds['?'] = cmds.help;
+
+  inp.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const raw = inp.value.trim();
+    if (!raw) return;
+    print('', `<span class="prompt">teo@portfolio ~</span><span style="color:var(--green)">$</span> ${raw}`);
+    inp.value = '';
+    const [name, ...args] = raw.split(/\s+/);
+    if (cmds[name]) cmds[name](args);
+    else print('err', `zsh: command not found: ${name}. try <span style="color:var(--green)">help</span>`);
+  });
+}
+
+/* activity monitor */
+function renderMonitor(body){
+  body.innerHTML = `
+    <div style="font-size:11px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:10px;">Live · sim · refresh 1 Hz</div>
+    <div class="am-grid">
+      <div class="am-card">
+        <h5>RBY-GameHook poll</h5>
+        <div class="v" id="am-hz">600 Hz</div>
+        <canvas class="mini" id="am-spark1"></canvas>
+      </div>
+      <div class="am-card">
+        <h5>Memory diff/sec</h5>
+        <div class="v" id="am-diff">— /s</div>
+        <canvas class="mini" id="am-spark2"></canvas>
+      </div>
+      <div class="am-card">
+        <h5>FCPXML build queue</h5>
+        <div class="v" id="am-queue">0 jobs</div>
+        <canvas class="mini" id="am-spark3"></canvas>
+      </div>
+      <div class="am-card">
+        <h5>OBS WS clients</h5>
+        <div class="v" id="am-ws">3</div>
+        <canvas class="mini" id="am-spark4"></canvas>
+      </div>
+    </div>
+    <div class="am-list">
+      <div class="am-row"><span>process</span><span>cpu</span></div>
+      <div class="am-row"><span>RBYNewLayout.exe</span><span id="p1">—%</span></div>
+      <div class="am-row"><span>GameHook.WebAPI</span><span id="p2">—%</span></div>
+      <div class="am-row"><span>AhShuckie (rust)</span><span id="p3">—%</span></div>
+      <div class="am-row"><span>node (hyperframes)</span><span id="p4">—%</span></div>
+      <div class="am-row"><span>ffmpeg</span><span id="p5">—%</span></div>
+    </div>
+  `;
+  const sparks = ['am-spark1','am-spark2','am-spark3','am-spark4'].map(id => {
+    const cv = body.querySelector('#'+id);
+    cv.width = cv.clientWidth || 200; cv.height = 36;
+    return { cv, ctx: cv.getContext('2d'), data: Array(40).fill(0) };
+  });
+  const tick = () => {
+    sparks.forEach((s,i) => {
+      const v = 0.2 + Math.random()*0.8;
+      s.data.shift(); s.data.push(v);
+      const { ctx, cv } = s;
+      ctx.clearRect(0,0,cv.width,cv.height);
+      const c = ['#22d3ee','#a78bfa','#f472b6','#4ade80'][i];
+      ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath();
+      s.data.forEach((y,j) => {
+        const x = (j/(s.data.length-1)) * cv.width;
+        const yy = cv.height - y * cv.height * 0.9 - 2;
+        j===0 ? ctx.moveTo(x,yy) : ctx.lineTo(x,yy);
+      });
+      ctx.stroke();
+      ctx.fillStyle = c+'40'; ctx.lineTo(cv.width, cv.height); ctx.lineTo(0, cv.height); ctx.closePath(); ctx.fill();
+    });
+    body.querySelector('#am-diff').textContent = (180 + (Math.random()*200|0)) + ' /s';
+    body.querySelector('#am-queue').textContent = (Math.random()*4|0) + ' jobs';
+    body.querySelector('#am-ws').textContent = (2 + (Math.random()*4|0)) + ' clients';
+    body.querySelector('#p1').textContent = (10 + Math.random()*8).toFixed(1) + '%';
+    body.querySelector('#p2').textContent = (4 + Math.random()*6).toFixed(1) + '%';
+    body.querySelector('#p3').textContent = (32 + Math.random()*14).toFixed(1) + '%';
+    body.querySelector('#p4').textContent = (1 + Math.random()*3).toFixed(1) + '%';
+    body.querySelector('#p5').textContent = (45 + Math.random()*20).toFixed(1) + '%';
+  };
+  tick();
+  const iv = setInterval(tick, 900);
+  // clean up when window closes
+  const obs = new MutationObserver(() => { if (!document.body.contains(body)) { clearInterval(iv); obs.disconnect(); } });
+  obs.observe(document.body, { childList: true, subtree: true });
+}
+
+/* mail */
+function renderMail(body){
+  body.innerHTML = `
+    <div style="display:grid; gap:10px;">
+      <div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--ink-mute); width:60px;">To</span><input value="teoperalez@gmail.com" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:6px; color:var(--ink); font:inherit; padding:6px 10px;"></div>
+      <div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--ink-mute); width:60px;">From</span><input placeholder="you@company.com" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:6px; color:var(--ink); font:inherit; padding:6px 10px;"></div>
+      <div style="display:flex; gap:10px; align-items:center;"><span style="color:var(--ink-mute); width:60px;">Subject</span><input value="Frontend role — your portfolio looks like a fit" style="flex:1; background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:6px; color:var(--ink); font:inherit; padding:6px 10px;"></div>
+      <textarea style="height:130px; background:rgba(255,255,255,0.05); border:1px solid var(--line); border-radius:6px; color:var(--ink); font:inherit; padding:10px; resize:none;">Hey Teo —
+
+we're hiring a frontend engineer and saw your portfolio. would love to chat.
+
+best,
+</textarea>
+      <button style="align-self:flex-end; background:var(--cyan); color:#001018; font-weight:600; border:none; padding:8px 18px; border-radius:8px; cursor:pointer; font:inherit;" onclick="window.location.href='mailto:teoperalez@gmail.com?subject='+encodeURIComponent('Frontend role')">Send</button>
+      <p style="color:var(--ink-mute); font-size:11px; margin:0; text-align:right;">Send opens your real mail client.</p>
+    </div>
+  `;
+}
+
+/* github panel */
+function renderGithub(body){
+  body.classList.add('gh-list');
+  const langs = { 'TypeScript':'#3178c6', 'C#':'#178600', 'Rust':'#dea584', 'JavaScript':'#f7df1e', 'Python':'#3572A5', 'Next.js':'#000', 'PowerShell':'#012456' };
+  const repos = [
+    { n:'RBY-GameHook',      d:'WPF + WebAPI memory poller for emulators. 600 Hz tap.', l:'C#', stars:1, fork:2 },
+    { n:'AhShuckie',         d:'Hard fork of supershuckie. Rust emulator + REST API.', l:'Rust', stars:0, fork:0 },
+    { n:'IRLPC-Hyperframes', d:'12-step LLM video pipeline; emits FCPXML 1.11.', l:'TypeScript', stars:0, fork:0 },
+    { n:'GSCNewLayout',      d:'Gen 2 Pokémon speedrun overlay. Full damage calc.', l:'TypeScript', stars:0, fork:0 },
+    { n:'RBYNewLayout',      d:'Gen 1 Pokémon speedrun overlay (RBY-Layout-2026).', l:'TypeScript', stars:0, fork:0 },
+    { n:'PokerSolver',       d:'Hold\'em solver with background scheduler.', l:'TypeScript', stars:0, fork:0 },
+    { n:'TeoPeralez.com',    d:'Next.js personal site. Hosts GameHook AutoUpdater.xml.', l:'Next.js', stars:0, fork:0 },
+  ];
+  body.innerHTML = `
+    <div style="display:flex; gap:8px; align-items:center; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px;">
+      <div style="width:40px;height:40px;border-radius:50%; background:linear-gradient(135deg,#a78bfa,#22d3ee); display:grid;place-items:center;font-size:18px;">T</div>
+      <div style="flex:1;"><div style="font-weight:600;">teoperalez</div><div style="color:var(--ink-mute); font-size:11px;">26 repos · joined 2018</div></div>
+      <a href="https://github.com/teoperalez" style="font-size:11px; color:var(--cyan); text-decoration:none; border:1px solid var(--cyan); padding:4px 10px; border-radius:6px;">Follow</a>
+    </div>
+    ${repos.map(r=>`<div class="gh-row">
+      <span class="pip" style="background:${langs[r.l]||'#888'}"></span>
+      <div style="flex:1;">
+        <div><a href="https://github.com/teoperalez/${r.n}" style="color:var(--cyan); text-decoration:none;" class="nm">${r.n}</a></div>
+        <div class="desc">${r.d}</div>
+        <div class="gh-bar">
+          <span class="lang"><span class="pip" style="background:${langs[r.l]||'#888'};width:8px;height:8px;border-radius:50%;display:inline-block;"></span>${r.l}</span>
+          <span>★ ${r.stars}</span>
+          <span>⑂ ${r.fork}</span>
+          <span>updated today</span>
+        </div>
+      </div>
+    </div>`).join('')}
+  `;
+}
+
+/* ---------- boot: open intro windows ---------- */
+setTimeout(() => openApp('readme'), 250);
+setTimeout(() => openApp('finder'), 700);
+setTimeout(() => openApp('terminal'), 1100);
+</script>
+
+</body>
+</html>

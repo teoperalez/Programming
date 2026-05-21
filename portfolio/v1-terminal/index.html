@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>teoperalez@portfolio:~$</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-2: #111;
+  --fg: #f5d300;
+  --fg-dim: #b89e00;
+  --fg-mute: #6e6300;
+  --green: #4ade80;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --line: rgba(245,211,0,0.18);
+  --mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, "SF Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: var(--mono); font-size: 14px; line-height: 1.5; }
+body {
+  min-height: 100vh;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(245,211,0,0.025) 0 1px, transparent 1px 3px),
+    radial-gradient(circle at 50% 0%, rgba(245,211,0,0.06), transparent 50%);
+  cursor: text;
+}
+
+::selection { background: var(--fg); color: var(--bg); }
+
+a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { background: var(--fg); color: var(--bg); text-decoration: none; }
+
+/* CRT scanline overlay */
+.crt {
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 2px, transparent 2px 4px);
+  pointer-events: none; z-index: 100; mix-blend-mode: multiply;
+}
+.vignette {
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%);
+  pointer-events: none; z-index: 99;
+}
+
+/* terminal frame */
+.tty {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 20px 120px;
+}
+
+.titlebar {
+  border: 1px solid var(--line);
+  border-bottom: none;
+  padding: 8px 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-2);
+  font-size: 12px;
+}
+.titlebar .lhs { display: flex; gap: 6px; }
+.titlebar .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--fg-mute); border: 1px solid var(--line); }
+.titlebar .dot.red { background: var(--red); }
+.titlebar .dot.amb { background: var(--fg); }
+.titlebar .dot.grn { background: var(--green); }
+.titlebar .path { color: var(--fg-dim); }
+
+.screen {
+  border: 1px solid var(--line);
+  padding: 20px 22px 22px;
+  background: rgba(0,0,0,0.6);
+  box-shadow: 0 0 60px rgba(245,211,0,0.05) inset;
+  position: relative;
+}
+
+/* ascii art */
+pre.ascii {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.05;
+  color: var(--fg);
+  white-space: pre;
+  overflow-x: auto;
+  text-shadow: 0 0 6px rgba(245,211,0,0.45);
+}
+
+.subline { color: var(--fg-dim); margin: 0 0 18px; }
+
+/* a "line" of terminal output */
+.line { display: block; white-space: pre-wrap; word-break: break-word; }
+.line.cmd::before { content: 'teoperalez@portfolio:~$ '; color: var(--green); }
+.line.cmd { color: var(--fg); }
+.line.out { color: var(--fg-dim); }
+.line.muted { color: var(--fg-mute); }
+.line.h { color: var(--fg); font-weight: 700; }
+.line.err::before { content: '! '; color: var(--red); }
+.line.err { color: var(--red); }
+.line.ok::before { content: '✓ '; color: var(--green); }
+.line.ok { color: var(--green); }
+.line.cursor::after { content: '█'; animation: blink 1s steps(1,end) infinite; margin-left: 2px; color: var(--fg); }
+
+@keyframes blink { 50% { opacity: 0; } }
+
+hr.sep { border: none; border-top: 1px dashed var(--line); margin: 28px 0; }
+
+/* "table" output */
+table.t { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 8px; }
+table.t th, table.t td { text-align: left; padding: 4px 12px 4px 0; border-bottom: 1px dashed var(--line); vertical-align: top; }
+table.t th { color: var(--fg); font-weight: 700; }
+table.t td { color: var(--fg-dim); }
+table.t td.tag { color: var(--blue); }
+table.t td.link a { color: var(--fg); }
+table.t tr:hover td { background: rgba(245,211,0,0.04); }
+
+/* boxes / cards */
+.box {
+  border: 1px solid var(--line);
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.box h3 {
+  margin: 0 0 8px; font-size: 14px; font-weight: 700;
+  color: var(--fg);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.box h3 .meta { color: var(--fg-mute); font-weight: 400; font-size: 12px; }
+
+.tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  margin-right: 4px;
+  color: var(--fg-dim);
+}
+.tag.t-overlay { color: var(--green); border-color: rgba(74,222,128,0.4); }
+.tag.t-systems { color: var(--blue); border-color: rgba(96,165,250,0.4); }
+.tag.t-ai { color: #c084fc; border-color: rgba(192,132,252,0.4); }
+.tag.t-web { color: var(--fg); border-color: rgba(245,211,0,0.5); }
+.tag.t-rom { color: #fb923c; border-color: rgba(251,146,60,0.4); }
+.tag.t-tools { color: var(--fg-dim); }
+
+/* REPL prompt area */
+.repl {
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  background: rgba(245,211,0,0.02);
+  margin: 18px 0 0;
+}
+.repl .hint { color: var(--fg-mute); font-size: 12px; margin-bottom: 8px; }
+.repl-input {
+  display: flex; align-items: center; gap: 8px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px; margin-top: 10px;
+}
+.repl-input::before { content: '$'; color: var(--green); }
+.repl-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+  caret-color: var(--fg);
+}
+.repl-history { max-height: 240px; overflow-y: auto; }
+.repl-history .line.cmd::before { content: '$ '; }
+
+/* ascii bar */
+.bar { color: var(--fg); white-space: pre; }
+.bar .filled { color: var(--fg); }
+.bar .empty  { color: var(--fg-mute); }
+
+/* keystroke key */
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+/* poker mini-demo */
+.poker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.poker-side { border: 1px solid var(--line); padding: 10px; }
+.poker-side h4 { margin: 0 0 8px; font-size: 12px; color: var(--fg-dim); display: flex; justify-content: space-between; }
+.poker-cards { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+.pcard {
+  border: 1px solid var(--line); padding: 2px 6px; cursor: pointer;
+  font-size: 13px; min-width: 28px; text-align: center;
+}
+.pcard.sel { background: var(--fg); color: var(--bg); }
+.pcard.red { color: var(--red); }
+.pcard.red.sel { background: var(--red); color: var(--bg); }
+.poker-eq { font-size: 11px; color: var(--fg-mute); }
+.poker-eq .pct { color: var(--fg); font-size: 22px; display: block; line-height: 1; margin-top: 2px; }
+.poker-controls { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.btn {
+  padding: 4px 10px; background: transparent; border: 1px solid var(--line); color: var(--fg);
+  font: inherit; cursor: pointer;
+}
+.btn:hover { background: var(--fg); color: var(--bg); }
+
+/* memory grid */
+.mem-grid {
+  display: grid; grid-template-columns: repeat(32, 1fr); gap: 2px;
+  margin: 10px 0; max-width: 540px;
+}
+.mem-cell { aspect-ratio: 1; background: rgba(245,211,0,0.08); transition: background .15s; }
+.mem-cell.hot { background: var(--red); }
+.mem-cell.warm { background: var(--fg); }
+.mem-evt { color: var(--green); }
+
+@media (max-width: 700px) {
+  pre.ascii { font-size: 8px; }
+  .mem-grid { grid-template-columns: repeat(20, 1fr); }
+  .poker-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="crt"></div>
+<div class="vignette"></div>
+
+<div class="tty">
+  <div class="titlebar">
+    <div class="lhs"><span class="dot red"></span><span class="dot amb"></span><span class="dot grn"></span></div>
+    <div class="path">teoperalez@portfolio: ~/work — 80×24</div>
+    <div style="color:var(--fg-mute)">tmux 0:zsh</div>
+  </div>
+
+  <div class="screen">
+
+<pre class="ascii">
+████████╗███████╗ ██████╗     ██████╗ ███████╗██████╗  █████╗ ██╗     ███████╗███████╗
+╚══██╔══╝██╔════╝██╔═══██╗    ██╔══██╗██╔════╝██╔══██╗██╔══██╗██║     ██╔════╝╚══███╔╝
+   ██║   █████╗  ██║   ██║    ██████╔╝█████╗  ██████╔╝███████║██║     █████╗    ███╔╝
+   ██║   ██╔══╝  ██║   ██║    ██╔═══╝ ██╔══╝  ██╔══██╗██╔══██║██║     ██╔══╝   ███╔╝
+   ██║   ███████╗╚██████╔╝    ██║     ███████╗██║  ██║██║  ██║███████╗███████╗███████╗
+   ╚═╝   ╚══════╝ ╚═════╝     ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
+</pre>
+
+<p class="subline">// frontend engineer · speedrun overlays · emulator hooks · ai video pipelines · solvers · web<br/>// last login: today · 26 repos online · ready for input</p>
+
+<span class="line cmd">whoami</span>
+<span class="line out">teo peralez — i build interfaces for systems that move data really fast.</span>
+<span class="line out">overlays that read live emulator memory at 600 Hz. video pipelines that</span>
+<span class="line out">stitch 12 stages of LLMs into a FCPXML. solvers, rom hacks, scrapers.</span>
+<span class="line out">i ship the whole stack and i ship the pixels on top.</span>
+
+<hr class="sep" />
+
+<span class="line cmd">cat looking-for.txt</span>
+<div class="box">
+  <span class="line h">→ frontend role, ideally somewhere with a hot loop.</span>
+  <span class="line out">live data. real-time visualization. dashboards that aren't just CRUD.</span>
+  <span class="line out">remote-friendly. happy on any framework — react, next, electron, vanilla.</span>
+  <span class="line out">bonus points if you let me poke at the backend too.</span>
+</div>
+
+<hr class="sep" />
+
+<span class="line cmd">ls -la ~/work/featured/</span>
+<table class="t">
+  <thead><tr><th>permissions</th><th>size</th><th>name</th><th>tag</th><th>summary</th></tr></thead>
+  <tbody>
+    <tr><td>drwxr-xr-x</td><td>2.1M</td><td class="link"><a href="#run-damage">RBYNewLayout/</a></td><td class="tag"><span class="tag t-overlay">overlay</span></td><td>Electron + React Pokémon RBY speedrun overlay. Battle detection, damage calc, OBS chapter markers.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>1.8M</td><td class="link"><a href="#run-damage">GSCNewLayout/</a></td><td class="tag"><span class="tag t-overlay">overlay</span></td><td>Gen 2 overlay. Full damage calculator (weather, screens, burn, badges, STAB). Win + macOS portable.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>1.7M</td><td class="link">RSENewLayout/</td><td class="tag"><span class="tag t-overlay">overlay</span></td><td>Gen 3 RSE overlay. Trainer mapping, marker automation, post-gym tier cards.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>55M</td><td class="link"><a href="#run-mem">RBY-GameHook/</a></td><td class="tag"><span class="tag t-systems">.net 8</span></td><td>WPF host + WebAPI single-file exe. Reads PokeAByte shared memory at 600 Hz. Auto-updater feed on teoperalez.com.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>—</td><td class="link">AhShuckie/</td><td class="tag"><span class="tag t-systems">rust</span></td><td>Hard fork of supershuckie. REST API, deterministic replays, unlocked-speed emu.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>—</td><td class="link"><a href="#run-flow">IRLPC Hyperframes/</a></td><td class="tag"><span class="tag t-ai">ai pipeline</span></td><td>12-step AI video pipeline. Transcribe → A/B-roll classify → script → audit → storyboard → render → FCPXML 1.11.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>—</td><td class="link"><a href="#run-poker">PokerSolver/</a></td><td class="tag"><span class="tag t-tools">solver</span></td><td>Strategy mapping + background solve scheduler. Equity + range work.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>—</td><td class="link">bg-removal-hybrid/</td><td class="tag"><span class="tag t-tools">cv</span></td><td>Hybrid background-removal app (model + chroma fallback) with review + touchup siblings.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>—</td><td class="link">TeoPeralez.com/</td><td class="tag"><span class="tag t-web">next.js</span></td><td>Personal site. Also hosts the GameHook AutoUpdater.xml at /gamehook/.</td></tr>
+    <tr><td>drwxr-xr-x</td><td>—</td><td class="link">GSC-Member-Picks/</td><td class="tag"><span class="tag t-web">web</span></td><td>Membership site: status screens, tierlists, free + paid downloads, overlay assets.</td></tr>
+  </tbody>
+</table>
+
+<span class="line cmd">ls -la ~/work/everything/ | head</span>
+<table class="t">
+  <tbody>
+    <tr><td>—</td><td class="link">AhShuckie</td><td class="tag"><span class="tag t-systems">rust</span></td><td>emulator fork</td></tr>
+    <tr><td>—</td><td class="link">bg-removal-hybrid</td><td class="tag"><span class="tag t-tools">cv</span></td><td>hybrid bg remover</td></tr>
+    <tr><td>—</td><td class="link">bg-removal-review</td><td class="tag"><span class="tag t-tools">cv</span></td><td>batch review GUI</td></tr>
+    <tr><td>—</td><td class="link">bg-removal-touchup</td><td class="tag"><span class="tag t-tools">cv</span></td><td>manual touch-up</td></tr>
+    <tr><td>—</td><td class="link">DailyMembersUpdater</td><td class="tag"><span class="tag t-tools">cron</span></td><td>member-list sync</td></tr>
+    <tr><td>—</td><td class="link">Discord-Bot</td><td class="tag"><span class="tag t-tools">node</span></td><td>community bot</td></tr>
+    <tr><td>—</td><td class="link">EarningsAnalyticsAggregator</td><td class="tag"><span class="tag t-tools">etl</span></td><td>finance scraper</td></tr>
+    <tr><td>—</td><td class="link">Emerald-Rom-Builder</td><td class="tag"><span class="tag t-rom">rom</span></td><td>gen 3 rom builder</td></tr>
+    <tr><td>—</td><td class="link">FamilyMedia</td><td class="tag"><span class="tag t-tools">media</span></td><td>media organizer</td></tr>
+    <tr><td>—</td><td class="link">FileOrganizer</td><td class="tag"><span class="tag t-tools">cli</span></td><td>video transcription + LLM tagging</td></tr>
+    <tr><td>—</td><td class="link">gemma-agent</td><td class="tag"><span class="tag t-ai">ai</span></td><td>local LLM agent</td></tr>
+    <tr><td>—</td><td class="link">IRLPC-Hyperframes</td><td class="tag"><span class="tag t-ai">ai</span></td><td>video pipeline</td></tr>
+    <tr><td>—</td><td class="link">MSCS</td><td class="tag"><span class="tag t-tools">school</span></td><td>cs coursework</td></tr>
+    <tr><td>—</td><td class="link">pokemon-exp-calculator</td><td class="tag"><span class="tag t-web">web</span></td><td>exp curves &amp; gain calc</td></tr>
+    <tr><td>—</td><td class="link">PokemonOfficialArtwork</td><td class="tag"><span class="tag t-tools">assets</span></td><td>asset pipeline</td></tr>
+    <tr><td>—</td><td class="link">RBY-GameHook</td><td class="tag"><span class="tag t-systems">.net 8</span></td><td>memory poller</td></tr>
+    <tr><td>—</td><td class="link">RBY-Member-Picks</td><td class="tag"><span class="tag t-web">web</span></td><td>membership site</td></tr>
+    <tr><td>—</td><td class="link">resolve-mcp</td><td class="tag"><span class="tag t-tools">mcp</span></td><td>davinci resolve mcp server</td></tr>
+    <tr><td>—</td><td class="link">YTBiz</td><td class="tag"><span class="tag t-tools">prod</span></td><td>productivity logger</td></tr>
+    <tr><td colspan="4" class="muted">… 7 more. type `ls` in the repl below to dump all.</td></tr>
+  </tbody>
+</table>
+
+<hr class="sep" />
+
+<span class="line cmd">cat ~/.skills</span>
+<div class="box">
+<pre style="margin:0; font-size:13px; line-height:1.7;">
+react / ts        <span class="bar"><span class="filled">██████████████████</span><span class="empty">██</span></span>  96%
+next.js           <span class="bar"><span class="filled">█████████████████</span><span class="empty">███</span></span>   88%
+electron          <span class="bar"><span class="filled">██████████████████</span><span class="empty">██</span></span>  92%
+canvas / webgl    <span class="bar"><span class="filled">████████████████</span><span class="empty">████</span></span>    82%
+c# / .net 8 / wpf <span class="bar"><span class="filled">████████████████</span><span class="empty">████</span></span>    80%
+node / express    <span class="bar"><span class="filled">██████████████████</span><span class="empty">██</span></span>  90%
+python            <span class="bar"><span class="filled">███████████████</span><span class="empty">█████</span></span>     78%
+rust              <span class="bar"><span class="filled">███████████</span><span class="empty">█████████</span></span>         55%
+ffmpeg / fcpxml   <span class="bar"><span class="filled">█████████████████</span><span class="empty">███</span></span>   86%
+gha / vercel ops  <span class="bar"><span class="filled">█████████████████</span><span class="empty">███</span></span>   88%
+gb / z80 asm      <span class="bar"><span class="filled">██████████</span><span class="empty">██████████</span></span>          50%
+</pre>
+</div>
+
+<hr class="sep" />
+
+<a id="run-damage"></a>
+<span class="line cmd">./demo damage --gen 2 --interactive</span>
+<div class="box">
+  <h3>damage_calc.exe <span class="meta">from GSCNewLayout</span></h3>
+  <div id="demo-damage"></div>
+</div>
+
+<a id="run-poker"></a>
+<span class="line cmd">./demo equity --hands 2 --monte-carlo</span>
+<div class="box">
+  <h3>poker_equity.exe <span class="meta">from PokerSolver</span></h3>
+  <div id="demo-poker"></div>
+</div>
+
+<a id="run-mem"></a>
+<span class="line cmd">./demo gamehook --poll-rate 600hz --tap</span>
+<div class="box">
+  <h3>gamehook_poll.exe <span class="meta">from RBY-GameHook</span></h3>
+  <div id="demo-mem"></div>
+</div>
+
+<a id="run-flow"></a>
+<span class="line cmd">./demo pipeline --steps 12</span>
+<div class="box">
+  <h3>hyperframes_pipeline.txt <span class="meta">from IRLPC Hyperframes</span></h3>
+  <pre id="flow" style="margin:0; font-size:13px; line-height:1.6; color: var(--fg-dim);"></pre>
+</div>
+
+<hr class="sep" />
+
+<span class="line cmd">help</span>
+<div class="repl">
+  <div class="hint">try one of: <kbd>ls</kbd> <kbd>projects</kbd> <kbd>skills</kbd> <kbd>contact</kbd> <kbd>damage gengar venusaur thunderbolt</kbd> <kbd>about</kbd> <kbd>clear</kbd></div>
+  <div class="repl-history" id="history">
+    <span class="line out">welcome to the teo terminal · type a command and hit enter</span>
+  </div>
+  <div class="repl-input">
+    <input id="prompt" autofocus autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="type something…" />
+  </div>
+</div>
+
+<hr class="sep" />
+
+<span class="line cmd">cat contact.vcf</span>
+<div class="box">
+  <span class="line out">name : teo peralez</span>
+  <span class="line out">role : frontend engineer (open to work)</span>
+  <span class="line out">mail : <a href="mailto:teoperalez@gmail.com">teoperalez@gmail.com</a></span>
+  <span class="line out">gh   : <a href="https://github.com/teoperalez">github.com/teoperalez</a></span>
+  <span class="line out">site : <a href="https://teoperalez.com">teoperalez.com</a></span>
+</div>
+
+<span class="line cmd cursor">_</span>
+
+  </div><!-- /screen -->
+</div><!-- /tty -->
+
+<script>
+/* ---------- shared mini-helpers ---------- */
+const el = (tag, props={}, kids=[]) => {
+  const n = document.createElement(tag);
+  Object.entries(props).forEach(([k,v]) => {
+    if (k === 'class') n.className = v;
+    else if (k === 'style') Object.assign(n.style, v);
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n[k] = v;
+  });
+  (Array.isArray(kids)?kids:[kids]).forEach(c => c != null && n.append(c.nodeType?c:document.createTextNode(c)));
+  return n;
+};
+const $ = sel => document.querySelector(sel);
+
+/* ---------- demo 1: damage calculator ---------- */
+(function damageDemo(){
+  const mon = {
+    gengar:    { name: 'gengar',    atk: 165, spA: 244, type1: 'ghost',   type2: 'poison',  hp: 261 },
+    venusaur:  { name: 'venusaur',  atk: 189, spA: 222, type1: 'grass',   type2: 'poison',  hp: 364 },
+    snorlax:   { name: 'snorlax',   atk: 350, spA: 200, type1: 'normal',  type2: null,      hp: 523 },
+    alakazam:  { name: 'alakazam',  atk: 154, spA: 295, type1: 'psychic', type2: null,      hp: 261 },
+    machamp:   { name: 'machamp',   atk: 343, spA: 167, type1: 'fight',   type2: null,      hp: 343 },
+    starmie:   { name: 'starmie',   atk: 178, spA: 247, type1: 'water',   type2: 'psychic', hp: 261 },
+    chansey:   { name: 'chansey',   atk: 89,  spA: 222, type1: 'normal',  type2: null,      hp: 703 },
+  };
+  const moves = {
+    thunderbolt:  { name: 'thunderbolt',  power: 95,  type: 'electric', cat: 'sp' },
+    earthquake:   { name: 'earthquake',   power: 100, type: 'ground',   cat: 'ph' },
+    psychic:      { name: 'psychic',      power: 90,  type: 'psychic',  cat: 'sp' },
+    'body slam':  { name: 'body slam',    power: 85,  type: 'normal',   cat: 'ph' },
+    surf:         { name: 'surf',         power: 95,  type: 'water',    cat: 'sp' },
+    'leaf storm': { name: 'leaf storm',   power: 130, type: 'grass',    cat: 'sp' },
+    'cross chop': { name: 'cross chop',   power: 100, type: 'fight',    cat: 'ph' },
+    'shadow ball':{ name: 'shadow ball',  power: 80,  type: 'ghost',    cat: 'sp' },
+  };
+  // simplified Gen 2 type chart (defender perspective)
+  const eff = {
+    electric: { water: 2, flying: 2, ground: 0, electric: 0.5, grass: 0.5, dragon: 0.5 },
+    ground:   { fire: 2, electric: 2, poison: 2, rock: 2, flying: 0, grass: 0.5, bug: 0.5 },
+    psychic:  { fight: 2, poison: 2, psychic: 0.5, dark: 0, steel: 0.5 },
+    normal:   { ghost: 0, rock: 0.5, steel: 0.5 },
+    water:    { fire: 2, ground: 2, rock: 2, water: 0.5, grass: 0.5, dragon: 0.5 },
+    grass:    { water: 2, ground: 2, rock: 2, fire: 0.5, grass: 0.5, flying: 0.5, bug: 0.5, dragon: 0.5, poison: 0.5, steel: 0.5 },
+    fight:    { normal: 2, ice: 2, rock: 2, dark: 2, steel: 2, ghost: 0, flying: 0.5, poison: 0.5, psychic: 0.5, bug: 0.5 },
+    ghost:    { psychic: 2, ghost: 2, normal: 0, dark: 0.5, steel: 0.5 },
+  };
+  function multi(moveType, def){
+    const t = eff[moveType] || {};
+    return (t[def.type1] ?? 1) * (def.type2 ? (t[def.type2] ?? 1) : 1);
+  }
+  function calc(atkMon, defMon, mv, opts){
+    const level = 100;
+    const A = mv.cat === 'sp' ? atkMon.spA : atkMon.atk;
+    const D = mv.cat === 'sp' ? defMon.spA : defMon.atk; // simplified: use opposite stat
+    let dmg = (((2*level/5 + 2) * mv.power * A / D) / 50) + 2;
+    if (opts.stab && (atkMon.type1 === mv.type || atkMon.type2 === mv.type)) dmg *= 1.5;
+    const m = multi(mv.type, defMon);
+    dmg *= m;
+    if (opts.crit) dmg *= 2;
+    if (opts.burn && mv.cat === 'ph') dmg *= 0.5;
+    if (opts.screen) dmg *= 0.5;
+    if (opts.weather) dmg *= 1.5;
+    return { lo: Math.floor(dmg * 0.85), hi: Math.floor(dmg), effx: m };
+  }
+
+  const state = {
+    atk: 'gengar', def: 'venusaur', mv: 'thunderbolt',
+    stab: true, crit: false, burn: false, screen: false, weather: false,
+  };
+
+  function render(){
+    const root = document.getElementById('demo-damage');
+    root.innerHTML = '';
+    const sel = (label, key, options) => {
+      const wrap = el('div', { style: { display:'flex', alignItems:'center', gap:'8px', marginBottom:'6px' } });
+      wrap.append(el('span', { style:{color:'var(--fg-mute)', minWidth:'70px'}, textContent: label }));
+      const s = el('select', { style:{ background:'var(--bg-2)', color:'var(--fg)', border:'1px solid var(--line)', font:'inherit', padding:'2px 6px' } });
+      options.forEach(o => { const opt = el('option', { value:o, textContent:o }); if(o===state[key]) opt.selected = true; s.append(opt); });
+      s.addEventListener('change', () => { state[key] = s.value; render(); });
+      wrap.append(s);
+      return wrap;
+    };
+    const tog = (label, key) => {
+      const w = el('label', { style:{ display:'inline-flex', alignItems:'center', gap:'4px', marginRight:'10px', cursor:'pointer' } });
+      const i = el('input', { type:'checkbox', checked: state[key] });
+      i.addEventListener('change', () => { state[key] = i.checked; render(); });
+      w.append(i, document.createTextNode(label));
+      return w;
+    };
+
+    root.append(sel('attacker', 'atk', Object.keys(mon)));
+    root.append(sel('defender', 'def', Object.keys(mon)));
+    root.append(sel('move',     'mv',  Object.keys(moves)));
+
+    const tw = el('div', { style:{ marginTop:'10px' } });
+    tw.append(tog('STAB', 'stab'), tog('crit', 'crit'), tog('burn', 'burn'), tog('screen', 'screen'), tog('weather', 'weather'));
+    root.append(tw);
+
+    const a = mon[state.atk], d = mon[state.def], m = moves[state.mv];
+    const r = calc(a, d, m, state);
+    const pctLo = Math.min(100, Math.round(r.lo / d.hp * 100));
+    const pctHi = Math.min(100, Math.round(r.hi / d.hp * 100));
+    const bar = '█'.repeat(Math.round(pctHi/3)) + '░'.repeat(Math.max(0, 33 - Math.round(pctHi/3)));
+    const ko = r.lo >= d.hp ? '1-shot' : r.hi >= d.hp ? 'roll for KO' : `${Math.ceil(d.hp / r.hi)} hit KO`;
+
+    const out = el('pre', { style:{ margin:'14px 0 0', whiteSpace:'pre-wrap', fontSize:'13px', lineHeight:'1.6' } });
+    out.innerHTML =
+`> ${a.name} uses ${m.name} on ${d.name}
+  type effectiveness: x${r.effx}   ${r.effx>=2?'  '+'<span style="color:var(--green)">SUPER EFFECTIVE</span>': r.effx===0?'<span style="color:var(--red)">NO EFFECT</span>': r.effx<1?'<span style="color:var(--fg-mute)">not very effective</span>':''}
+  damage range      : ${r.lo}–${r.hi} (${pctLo}%–${pctHi}% of ${d.hp} HP)
+  result            : <span style="color:var(--fg)">${ko}</span>
+
+  ${bar}  ${pctHi}%`;
+    root.append(out);
+  }
+  render();
+})();
+
+/* ---------- demo 2: poker equity ---------- */
+(function pokerDemo(){
+  const suits = ['s','h','d','c'];
+  const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+  const rval = r => ranks.indexOf(r);
+
+  function makeDeck(){ const d=[]; for (const r of ranks) for (const s of suits) d.push(r+s); return d; }
+  function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  // very fast 5-card evaluator (returns integer; higher = better)
+  function eval5(c){
+    const rs = c.map(x => rval(x[0])).sort((a,b)=>b-a);
+    const ss = c.map(x => x[1]);
+    const flush = ss.every(s => s===ss[0]);
+    const uniq = [...new Set(rs)];
+    let straight = uniq.length===5 && (rs[0]-rs[4]===4);
+    if (!straight && uniq.length===5 && rs[0]===12 && rs[1]===3) { straight = true; rs.push(rs.shift()); rs[4]=-1; }
+    // counts
+    const cnt = {};
+    rs.forEach(r => cnt[r] = (cnt[r]||0)+1);
+    const groups = Object.entries(cnt).map(([r,n])=>[+r,n]).sort((a,b)=> b[1]-a[1] || b[0]-a[0]);
+    let cat;
+    if (straight && flush) cat = 8;
+    else if (groups[0][1]===4) cat = 7;
+    else if (groups[0][1]===3 && groups[1][1]===2) cat = 6;
+    else if (flush) cat = 5;
+    else if (straight) cat = 4;
+    else if (groups[0][1]===3) cat = 3;
+    else if (groups[0][1]===2 && groups[1][1]===2) cat = 2;
+    else if (groups[0][1]===2) cat = 1;
+    else cat = 0;
+    let score = cat * 1e10;
+    groups.forEach((g,i) => { score += g[0] * Math.pow(13, 4-i); });
+    return score;
+  }
+  function eval7(cs){
+    let best = -1;
+    for (let i=0;i<7;i++) for (let j=i+1;j<7;j++){
+      const five = cs.filter((_,k)=>k!==i && k!==j);
+      const v = eval5(five);
+      if (v>best) best = v;
+    }
+    return best;
+  }
+
+  const state = {
+    h1: ['As','Kh'],
+    h2: ['Qd','Qc'],
+    iters: 0, w1: 0, w2: 0, tie: 0, running: false,
+  };
+
+  function render(){
+    const root = document.getElementById('demo-poker');
+    root.innerHTML = '';
+
+    function side(label, key){
+      const s = el('div', { class:'poker-side' });
+      s.append(el('h4', {}, [label, el('span', { style:{color:'var(--fg-mute)'}, textContent: state[key].join(' ')})]));
+      const grid = el('div', { class:'poker-cards' });
+      const tray = el('div', { class:'poker-cards', style:{maxHeight:'76px', overflow:'auto'} });
+      state[key].forEach((c,i)=> {
+        const b = el('span', { class:'pcard sel'+(c[1]==='h'||c[1]==='d'?' red':''), textContent: c, onclick: () => {
+          state[key].splice(i,1); resetSim(); render();
+        }});
+        grid.append(b);
+      });
+      const deck = makeDeck().filter(c => !state.h1.includes(c) && !state.h2.includes(c));
+      deck.forEach(c => {
+        const b = el('span', { class:'pcard'+(c[1]==='h'||c[1]==='d'?' red':''), textContent: c, onclick: () => {
+          if (state[key].length<2) { state[key].push(c); resetSim(); render(); }
+        }});
+        tray.append(b);
+      });
+      s.append(grid);
+      s.append(el('div', { style:{ fontSize:'11px', color:'var(--fg-mute)', margin:'6px 0 4px' }, textContent: state[key].length<2 ? '↓ pick '+(2-state[key].length)+' card'+(2-state[key].length===1?'':'s') : 'tap a card to remove' }));
+      if (state[key].length<2) s.append(tray);
+      const eq = el('div', { class:'poker-eq' });
+      const total = state.iters || 1;
+      const pct = key==='h1' ? (state.w1 + state.tie/2)/total*100 : (state.w2 + state.tie/2)/total*100;
+      eq.innerHTML = `equity<br/><span class="pct">${pct.toFixed(2)}%</span><br/>${state.iters.toLocaleString()} boards`;
+      s.append(eq);
+      return s;
+    }
+
+    const grid = el('div', { class:'poker-grid' });
+    grid.append(side('hand A', 'h1'));
+    grid.append(side('hand B', 'h2'));
+    root.append(grid);
+
+    const ctl = el('div', { class:'poker-controls' });
+    ctl.append(el('button', { class:'btn', textContent: state.running?'■ stop':'▶ run 50k boards', onclick: () => { if(state.running){ state.running=false; render(); } else runSim(); } }));
+    ctl.append(el('button', { class:'btn', textContent: 'reset', onclick: () => { resetSim(); render(); } }));
+    ctl.append(el('button', { class:'btn', textContent: '🎲 random hands', onclick: () => {
+      const d = shuffle(makeDeck()); state.h1=[d[0],d[1]]; state.h2=[d[2],d[3]]; resetSim(); render();
+    }}));
+    root.append(ctl);
+  }
+  function resetSim(){ state.iters = state.w1 = state.w2 = state.tie = 0; }
+  function runSim(){
+    if (state.h1.length<2 || state.h2.length<2) return;
+    state.running = true; render();
+    const target = 50000;
+    function step(){
+      if (!state.running) return;
+      const batch = 800;
+      for (let i=0;i<batch;i++){
+        const d = shuffle(makeDeck().filter(c => !state.h1.includes(c) && !state.h2.includes(c)));
+        const board = d.slice(0,5);
+        const v1 = eval7([...state.h1, ...board]);
+        const v2 = eval7([...state.h2, ...board]);
+        if (v1>v2) state.w1++; else if (v2>v1) state.w2++; else state.tie++;
+        state.iters++;
+      }
+      render();
+      if (state.iters < target) requestAnimationFrame(step);
+      else { state.running = false; render(); }
+    }
+    requestAnimationFrame(step);
+  }
+  render();
+})();
+
+/* ---------- demo 3: memory poller ---------- */
+(function memDemo(){
+  const ROOT = document.getElementById('demo-mem');
+  const N = 32 * 16;
+  const grid = el('div', { class:'mem-grid' });
+  const cells = [];
+  for (let i=0;i<N;i++){ const c = el('div', { class:'mem-cell' }); cells.push(c); grid.append(c); }
+  const meta = el('div', { style:{display:'flex', justifyContent:'space-between', fontSize:'12px', color:'var(--fg-mute)', marginBottom:'8px', flexWrap:'wrap', gap:'8px'} });
+  const rateLabel = el('span', { textContent: 'rate: — Hz' });
+  const evtFeed   = el('div', { style:{ fontSize:'12px', maxHeight:'70px', overflow:'hidden', marginTop:'6px' } });
+  meta.append(el('span', { textContent: 'PokeAByte shared memory · 0x0000–0x01FF' }), rateLabel);
+
+  const ctl = el('div', { style:{ display:'flex', gap:'6px', marginTop:'10px', flexWrap:'wrap' } });
+  const rateBtns = [60, 200, 600, 1200].map(rt => {
+    const b = el('button', { class:'btn', textContent: rt+' Hz', onclick: () => { setRate(rt); } });
+    return b;
+  });
+  rateBtns.forEach(b => ctl.append(b));
+
+  ROOT.append(meta, grid, ctl, evtFeed);
+
+  const mem = new Uint8Array(N);
+  let timer = null, hz = 600, lastBattleByte = 0;
+
+  function tick(){
+    const change = Math.random();
+    const idx = Math.random() * N | 0;
+    const wasBattle = mem[20] !== 0;
+    if (change < 0.6) mem[idx] = Math.random()*255 | 0;
+    if (change < 0.02 && !wasBattle) { mem[20] = 1; pushEvt('battle_started', 0x0014, 1); }
+    else if (change < 0.04 && wasBattle) { mem[20] = 0; pushEvt('battle_ended', 0x0014, 0); }
+    else if (change < 0.08) { mem[55] = (Math.random()*4|0); pushEvt('encounter_type', 0x0037, mem[55]); }
+
+    for (let i=0;i<N;i++){
+      const v = mem[i];
+      const c = cells[i];
+      const isBattle = (i === 20 && mem[20]) || (i === 55 && mem[55]);
+      if (isBattle) c.className = 'mem-cell hot';
+      else if (v > 200) c.className = 'mem-cell warm';
+      else c.className = 'mem-cell';
+      c.style.opacity = v ? (0.25 + (v/255)*0.75) : 0.15;
+    }
+  }
+  function pushEvt(name, addr, val){
+    const t = new Date().toISOString().slice(11,19);
+    const l = el('div', { class:'mem-evt', style:{whiteSpace:'pre'} });
+    l.textContent = `[${t}] EVT ${name.padEnd(20)} addr=0x${addr.toString(16).padStart(4,'0')}  val=${val}`;
+    evtFeed.prepend(l);
+    while (evtFeed.children.length > 5) evtFeed.lastChild.remove();
+  }
+  function setRate(rt){
+    hz = rt; rateLabel.textContent = `rate: ${rt} Hz`;
+    if (timer) clearInterval(timer);
+    timer = setInterval(tick, 1000/rt);
+    rateBtns.forEach(b => b.style.background = (b.textContent === rt+' Hz') ? 'var(--fg)' : 'transparent');
+    rateBtns.forEach(b => b.style.color = (b.textContent === rt+' Hz') ? 'var(--bg)' : 'var(--fg)');
+  }
+  setRate(600);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearInterval(timer); else setRate(hz);
+  });
+})();
+
+/* ---------- demo 4: pipeline animated text ---------- */
+(function pipelineDemo(){
+  const steps = [
+    '01  whisper.cpp           ── transcribe.json',
+    '02  gpt-4o-mini  classify ── inventory.json   { a-roll | b-roll }',
+    '03  gpt-4o-mini  research ── tidbits.md',
+    '04  pexels + openverse    ── assets/*.jpg',
+    '05  claude sonnet 4.6     ── skeleton-plan.md  (interactive Q&A)',
+    '06  gpt-4o-mini  section  ── scripts/*.md',
+    '07  claude sonnet 4.6     ── audit + clip-map  (--strict)',
+    '08  storyboard.mjs        ── storyboard.html  (Hyperframes iframes)',
+    '09  approval gate          ── localhost:5173   (express + react)',
+    '10  ffmpeg + remotion     ── clips/*.mp4      (≤ 30 s each)',
+    '11  build_fcpxml.mjs      ── project.fcpxml   (1.11 · 4 tracks)',
+    '12  davinci resolve 20+   ── final.mov        (manual edit)',
+  ];
+  const out = document.getElementById('flow');
+  let i = 0;
+  function add(){
+    if (i >= steps.length) return;
+    out.textContent += steps[i] + '\n';
+    i++;
+    setTimeout(add, 320);
+  }
+  // start when in view
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !i) add(); }), { threshold: 0.2 });
+  io.observe(out);
+})();
+
+/* ---------- REPL ---------- */
+(function repl(){
+  const input = document.getElementById('prompt');
+  const hist  = document.getElementById('history');
+  const log = (cls, html) => {
+    const s = document.createElement('span');
+    s.className = 'line ' + (cls || 'out');
+    s.innerHTML = html;
+    hist.append(s);
+    hist.scrollTop = hist.scrollHeight;
+  };
+  const cmds = {
+    help(){ log('out','available: <kbd>ls</kbd> <kbd>projects</kbd> <kbd>skills</kbd> <kbd>contact</kbd> <kbd>about</kbd> <kbd>damage &lt;atk&gt; &lt;def&gt; &lt;move&gt;</kbd> <kbd>open &lt;repo&gt;</kbd> <kbd>clear</kbd>'); },
+    ls(){ this.projects(); },
+    projects(){
+      const list = ['AhShuckie','bg-removal-hybrid','bg-removal-review','bg-removal-touchup','DailyMembersUpdater','Discord-Bot','EarningsAnalyticsAggregator','Emerald-Rom-Builder','FamilyMedia','FileOrganizer','gemma-agent','GSCNewLayout','IRLPC Hyperframes','MSCS','pokemon-exp-calculator','resolve-mcp','PokemonOfficialArtwork','PokerSolver','RBY-GameHook','RBYNewLayout','RBYPC2025/GSC-Member-Picks','RBYPC2025/RBY-Member-Picks','RSENewLayout','TeoPeralez.com','YTBiz'];
+      log('out', list.map(x => `· ${x}`).join('<br/>'));
+    },
+    skills(){ log('out','typescript · react · electron · next.js · node · c# / .net 8 · rust · python · canvas · webgl · ffmpeg · fcpxml · gha · wpf · z80 asm'); },
+    contact(){ log('out','mail: <a href="mailto:teoperalez@gmail.com">teoperalez@gmail.com</a><br/>github: <a href="https://github.com/teoperalez">github.com/teoperalez</a><br/>site: <a href="https://teoperalez.com">teoperalez.com</a>'); },
+    about(){ log('out','i build interfaces for hot loops: live emulator state, monte-carlo solvers, ai pipelines, speedrun overlays. polyglot by necessity. 26 public repos under github.com/teoperalez.'); },
+    clear(){ hist.innerHTML = ''; },
+    open(args){
+      const repo = (args[0]||'').toLowerCase();
+      const map = { rbynewlayout:'RBYNewLayout', gscnewlayout:'GSCNewLayout', 'rby-gamehook':'RBY-GameHook', gamehook:'RBY-GameHook', hyperframes:'IRLPC-Hyperframes', pokersolver:'PokerSolver', 'teoperalez.com':'TeoPeralez.com' };
+      const slug = map[repo] || args[0];
+      if (!slug) return log('err','usage: open &lt;repo&gt;');
+      log('out', `→ opening https://github.com/teoperalez/${slug} in a new tab`);
+      window.open(`https://github.com/teoperalez/${slug}`, '_blank', 'noopener');
+    },
+    damage(args){
+      if (args.length < 3) return log('err', 'usage: damage &lt;attacker&gt; &lt;defender&gt; &lt;move&gt; — e.g. damage gengar venusaur thunderbolt');
+      log('out', `running calc(${args[0]}, ${args[1]}, "${args.slice(2).join(' ')}")…<br/>→ <a href="#run-damage">scroll up to the interactive widget — yours is wired in.</a>`);
+    },
+  };
+  cmds.h = cmds.help;
+  cmds['?'] = cmds.help;
+
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const raw = input.value.trim();
+    if (!raw) return;
+    log('cmd', raw);
+    input.value = '';
+    const [name, ...args] = raw.split(/\s+/);
+    const fn = cmds[name];
+    if (fn) fn.call(cmds, args);
+    else log('err', `command not found: ${name}. try <kbd>help</kbd>`);
+  });
+  // focus terminal on body click
+  document.body.addEventListener('click', e => {
+    if (e.target.closest('a, button, input, select, .mem-cell, .pcard')) return;
+    input.focus();
+  });
+})();
+</script>
+</body>
+</html>
