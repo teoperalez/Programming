@@ -3,7 +3,6 @@ Add-Type -AssemblyName System.Drawing
 
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $LITELLM_CONFIG = Join-Path $SCRIPT_DIR "litellm-config.yaml"
-$LITELLM_PORT   = 4000
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -72,7 +71,7 @@ $yBase += 38
 
 # Model
 $form.Controls.Add((New-Label "Ollama model:" $xLabel $yBase))
-$txtModel = New-TextBox "glm4" $xField $yBase
+$txtModel = New-TextBox "qwen2.5-coder:7b" $xField $yBase
 $form.Controls.Add($txtModel)
 $yBase += 38
 
@@ -162,16 +161,45 @@ $btnProxy.Add_Click({
         return
     }
 
-    # Write litellm config dynamically (overrides file on disk with current GUI values)
+    # Write litellm config dynamically (overrides file on disk with current GUI values).
+    # Claude model names are aliased to the local model so Claude Code's default
+    # selection routes to Ollama regardless of which Claude model it picks.
     $yaml = @"
 model_list:
   - model_name: $model
     litellm_params:
-      model: ollama/$model
-      api_base: $baseUrl
+      model: openai/$model
+      api_base: $baseUrl/v1
+      api_key: none
+  - model_name: claude-opus-4-7
+    litellm_params:
+      model: openai/$model
+      api_base: $baseUrl/v1
+      api_key: none
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: openai/$model
+      api_base: $baseUrl/v1
+      api_key: none
+  - model_name: claude-haiku-4-5-20251001
+    litellm_params:
+      model: openai/$model
+      api_base: $baseUrl/v1
+      api_key: none
+  - model_name: claude-opus-4-5
+    litellm_params:
+      model: openai/$model
+      api_base: $baseUrl/v1
+      api_key: none
 
 general_settings:
   master_key: sk-offline-local
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 600
+  num_retries: 0
+  callbacks: ["C:/Programming/litellm_hooks.proxy_handler_instance"]
 "@
     Set-Content -Path $LITELLM_CONFIG -Value $yaml -Encoding utf8
 

@@ -5,7 +5,7 @@ color 0A
 
 echo.
 echo  =========================================================
-echo   Claude Code - Offline Mode  ^|  GLM-4 via Ollama
+echo   Claude Code - Offline Mode  ^|  qwen2.5-coder via Ollama
 echo  =========================================================
 echo.
 
@@ -143,19 +143,19 @@ if errorlevel 1 (
 )
 echo       OK
 
-:: ── 5. Start Ollama + pull GLM-4 ─────────────────────────────────────────────
-echo  [5/5] GLM-4 model
+:: ── 5. Start Ollama + pull qwen2.5-coder ─────────────────────────────────────
+echo  [5/5] qwen2.5-coder model
 tasklist /fi "imagename eq ollama.exe" 2>nul | find /i "ollama.exe" >nul
 if errorlevel 1 (
     echo       Starting Ollama service...
     start "" /b ollama serve
     timeout /t 3 /nobreak >nul
 )
-echo       Pulling glm4 ^(skipped if already downloaded^)...
-ollama pull glm4
+echo       Pulling qwen2.5-coder:7b ^(skipped if already downloaded^)...
+ollama pull qwen2.5-coder:7b
 if errorlevel 1 (
     echo.
-    echo  [FAIL] Could not pull glm4. Is Ollama running and internet available?
+    echo  [FAIL] Could not pull qwen2.5-coder:7b. Is Ollama running and internet available?
     echo.
     pause
     exit /b 1
@@ -163,16 +163,45 @@ if errorlevel 1 (
 echo       OK
 
 :: ── Write LiteLLM config ──────────────────────────────────────────────────────
+:: All Claude model names are aliased to qwen2.5-coder:7b so Claude Code's
+:: default model selection (e.g. claude-opus-4-7) routes to the local Ollama instance.
 set "CFG=%TEMP%\litellm_claude_offline.yaml"
 (
     echo model_list:
-    echo   - model_name: glm4
+    echo   - model_name: qwen2.5-coder
     echo     litellm_params:
-    echo       model: ollama/glm4
-    echo       api_base: http://localhost:11434
+    echo       model: openai/qwen2.5-coder:7b
+    echo       api_base: http://localhost:11434/v1
+    echo       api_key: none
+    echo   - model_name: claude-opus-4-7
+    echo     litellm_params:
+    echo       model: openai/qwen2.5-coder:7b
+    echo       api_base: http://localhost:11434/v1
+    echo       api_key: none
+    echo   - model_name: claude-sonnet-4-6
+    echo     litellm_params:
+    echo       model: openai/qwen2.5-coder:7b
+    echo       api_base: http://localhost:11434/v1
+    echo       api_key: none
+    echo   - model_name: claude-haiku-4-5-20251001
+    echo     litellm_params:
+    echo       model: openai/qwen2.5-coder:7b
+    echo       api_base: http://localhost:11434/v1
+    echo       api_key: none
+    echo   - model_name: claude-opus-4-5
+    echo     litellm_params:
+    echo       model: openai/qwen2.5-coder:7b
+    echo       api_base: http://localhost:11434/v1
+    echo       api_key: none
     echo.
     echo general_settings:
     echo   master_key: sk-offline-local
+    echo.
+    echo litellm_settings:
+    echo   drop_params: true
+    echo   request_timeout: 600
+    echo   num_retries: 0
+    echo   callbacks: ["C:/Programming/litellm_hooks.proxy_handler_instance"]
 ) > "%CFG%"
 
 :: ── Start LiteLLM proxy ───────────────────────────────────────────────────────
@@ -182,13 +211,13 @@ call :WaitPort 4000 1
 if not errorlevel 1 (
     echo  Proxy already running.
 ) else (
-    start "LiteLLM [claude-offline]" /min cmd /k "python -m litellm --config "%CFG%" --port 4000"
-    echo  Waiting for proxy ^(up to 60 s^)...
-    call :WaitPort 4000 30
+    start "LiteLLM [claude-offline]" cmd /k "litellm --config "%CFG%" --port 4000"
+    echo  Waiting for proxy ^(up to 3 min - LiteLLM is slow to start^)...
+    call :WaitPort 4000 90
     if errorlevel 1 (
         echo.
-        echo  [FAIL] LiteLLM proxy did not respond within 60 s.
-        echo         Check the minimised LiteLLM window for errors.
+        echo  [FAIL] LiteLLM proxy did not respond within 3 min.
+        echo         Check the LiteLLM window for errors.
         echo.
         pause
         exit /b 1
@@ -199,14 +228,14 @@ if not errorlevel 1 (
 :: ── Launch Claude Code ────────────────────────────────────────────────────────
 echo.
 echo  =========================================================
-echo   All set! Launching Claude Code (offline / GLM-4)
+echo   All set! Launching Claude Code (offline / qwen2.5-coder)
 echo  =========================================================
 echo.
 
 set "ANTHROPIC_BASE_URL=http://localhost:4000"
 set "ANTHROPIC_AUTH_TOKEN=sk-offline-local"
-set "ANTHROPIC_CUSTOM_MODEL_OPTION=glm4"
-set "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME=Ollama GLM-4"
+set "ANTHROPIC_CUSTOM_MODEL_OPTION=qwen2.5-coder"
+set "ANTHROPIC_CUSTOM_MODEL_OPTION_NAME=Ollama qwen2.5-coder:7b"
 set "ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION=Local Ollama instance"
 set "API_TIMEOUT_MS=600000"
 set "CLAUDE_CODE_ATTRIBUTION_HEADER=0"
