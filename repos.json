@@ -28,6 +28,7 @@
     { "folder": "RBYPC2025/RBY-Member-Picks",  "remote": "https://github.com/teoperalez/RBY-Member-Picks.git",            "branch": "main" },
     { "folder": "RSENewLayout",                "remote": "https://github.com/teoperalez/RSE-Layout-2026.git",             "branch": "main" },
     { "folder": "TeoPeralez.com",              "remote": "https://github.com/teoperalez/TeoPeralez.com.git",              "branch": "main" },
+    { "folder": "Thumbnail Generator",         "remote": "https://github.com/teoperalez/Thumbnail-Generator.git",         "branch": "master" },
     { "folder": "YTBiz",                       "remote": "https://github.com/teoperalez/YTBiz.git",                       "branch": "main" }
   ],
   "skipped": [
