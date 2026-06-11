@@ -1,0 +1,505 @@
+/* ===== v1-terminal — brutalist hacker terminal (yellow-on-black CRT) ===== */
+
+.tty {
+  --bg: #0a0a0a;
+  --bg-2: #111;
+  --fg: #f5d300;
+  --fg-dim: #b89e00;
+  --fg-mute: #6e6300;
+  --green: #4ade80;
+  --red: #f87171;
+  --blue: #60a5fa;
+  --line: rgba(245, 211, 0, 0.18);
+  --mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image:
+    repeating-linear-gradient(0deg, rgba(245, 211, 0, 0.025) 0 1px, transparent 1px 3px),
+    radial-gradient(circle at 50% 0%, rgba(245, 211, 0, 0.06), transparent 50%);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: text;
+}
+
+.tty ::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.tty a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.tty a:hover {
+  background: var(--fg);
+  color: var(--bg);
+  text-decoration: none;
+}
+
+.tty kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 11px;
+  border-radius: 3px;
+  font-family: var(--mono);
+}
+
+/* CRT scanline overlay + vignette */
+.crt {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 4px);
+  pointer-events: none;
+  z-index: 100;
+  mix-blend-mode: multiply;
+}
+.vignette {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+  pointer-events: none;
+  z-index: 99;
+}
+
+/* terminal frame */
+.frame {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 20px 120px;
+}
+
+.backRow {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px 0 8px;
+}
+.tty .backlink {
+  color: var(--fg-mute);
+  font-size: 12px;
+  text-decoration: none;
+}
+.tty .backlink:hover {
+  background: transparent;
+  color: var(--fg);
+  text-decoration: underline;
+}
+
+.titlebar {
+  border: 1px solid var(--line);
+  border-bottom: none;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-2);
+  font-size: 12px;
+}
+.lhs {
+  display: flex;
+  gap: 6px;
+}
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--fg-mute);
+  border: 1px solid var(--line);
+}
+.dotRed { background: var(--red); }
+.dotAmb { background: var(--fg); }
+.dotGrn { background: var(--green); }
+.path { color: var(--fg-dim); }
+.tmux { color: var(--fg-mute); }
+
+.screen {
+  border: 1px solid var(--line);
+  padding: 20px 22px 22px;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 60px rgba(245, 211, 0, 0.05) inset;
+  position: relative;
+}
+
+/* ascii art banner */
+.ascii {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.05;
+  color: var(--fg);
+  white-space: pre;
+  overflow-x: auto;
+  text-shadow: 0 0 6px rgba(245, 211, 0, 0.45);
+  font-family: var(--mono);
+}
+
+.subline {
+  color: var(--fg-dim);
+  margin: 0 0 18px;
+}
+
+/* a "line" of terminal output */
+.line {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cmd { color: var(--fg); }
+.cmd::before {
+  content: 'teoperalez@portfolio:~$ ';
+  color: var(--green);
+}
+.out { color: var(--fg-dim); }
+.muted { color: var(--fg-mute); }
+.h {
+  color: var(--fg);
+  font-weight: 700;
+}
+.err { color: var(--red); }
+.err::before {
+  content: '! ';
+  color: var(--red);
+}
+.ok { color: var(--green); }
+.ok::before {
+  content: '✓ ';
+  color: var(--green);
+}
+.cursor::after {
+  content: '█';
+  animation: blink 1s steps(1, end) infinite;
+  margin-left: 2px;
+  color: var(--fg);
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.sep {
+  border: none;
+  border-top: 1px dashed var(--line);
+  margin: 28px 0;
+}
+
+/* "table" output */
+.t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 6px 0 8px;
+}
+.t th,
+.t td {
+  text-align: left;
+  padding: 4px 12px 4px 0;
+  border-bottom: 1px dashed var(--line);
+  vertical-align: top;
+}
+.t th {
+  color: var(--fg);
+  font-weight: 700;
+}
+.t td {
+  color: var(--fg-dim);
+}
+.t tr:hover td {
+  background: rgba(245, 211, 0, 0.04);
+}
+.t td.muted {
+  color: var(--fg-mute);
+}
+.linkCell a {
+  color: var(--fg);
+}
+
+/* boxes / cards */
+.box {
+  border: 1px solid var(--line);
+  padding: 16px 18px;
+  margin: 14px 0;
+}
+.boxTitle {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.boxMeta {
+  color: var(--fg-mute);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+/* category tags */
+.tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  margin-right: 4px;
+  color: var(--fg-dim);
+}
+.tOverlay { color: var(--green); border-color: rgba(74, 222, 128, 0.4); }
+.tSystems { color: var(--blue); border-color: rgba(96, 165, 250, 0.4); }
+.tAi { color: #c084fc; border-color: rgba(192, 132, 252, 0.4); }
+.tWeb { color: var(--fg); border-color: rgba(245, 211, 0, 0.5); }
+.tRom { color: #fb923c; border-color: rgba(251, 146, 60, 0.4); }
+.tTools { color: var(--fg-dim); }
+
+/* skills bars */
+.skillsPre {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre;
+  overflow-x: auto;
+  font-family: var(--mono);
+}
+.barFilled { color: var(--fg); }
+.barEmpty { color: var(--fg-mute); }
+
+/* generic terminal button */
+.btn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+.btnActive {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* damage demo */
+.selRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.selLabel {
+  color: var(--fg-mute);
+  min-width: 70px;
+}
+.select {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  font: inherit;
+  padding: 2px 6px;
+}
+.toggles {
+  margin-top: 10px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 10px;
+  cursor: pointer;
+}
+.toggle input {
+  accent-color: var(--fg);
+}
+.demoOut {
+  margin: 14px 0 0;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: var(--mono);
+}
+.fxGreen { color: var(--green); }
+.fxRed { color: var(--red); }
+.fxMute { color: var(--fg-mute); }
+.fxFg { color: var(--fg); }
+
+/* poker demo */
+.pokerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.pokerSide {
+  border: 1px solid var(--line);
+  padding: 10px;
+}
+.pokerSideHead {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  display: flex;
+  justify-content: space-between;
+}
+.pokerCards {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.tray {
+  max-height: 76px;
+  overflow: auto;
+}
+.pcard {
+  border: 1px solid var(--line);
+  padding: 2px 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  min-width: 28px;
+  text-align: center;
+  background: transparent;
+  color: var(--fg);
+}
+.pcard.red { color: var(--red); }
+.pcard.sel {
+  background: var(--fg);
+  color: var(--bg);
+}
+.pcard.red.sel {
+  background: var(--red);
+  color: var(--bg);
+}
+.pickHint {
+  font-size: 11px;
+  color: var(--fg-mute);
+  margin: 6px 0 4px;
+}
+.pokerEq {
+  font-size: 11px;
+  color: var(--fg-mute);
+}
+.pct {
+  color: var(--fg);
+  font-size: 22px;
+  display: block;
+  line-height: 1;
+  margin-top: 2px;
+}
+.pokerControls {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* memory poller demo */
+.memMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--fg-mute);
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.memGrid {
+  display: grid;
+  grid-template-columns: repeat(32, 1fr);
+  gap: 2px;
+  margin: 10px 0;
+  max-width: 540px;
+}
+.memCell {
+  aspect-ratio: 1;
+  background: rgba(245, 211, 0, 0.08);
+  transition: background 0.15s;
+}
+.memCell.hot { background: var(--red); }
+.memCell.warm { background: var(--fg); }
+.memCtl {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.memEvts {
+  font-size: 12px;
+  max-height: 70px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.memEvt {
+  color: var(--green);
+  white-space: pre;
+}
+
+/* pipeline trace */
+.flow {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg-dim);
+  white-space: pre;
+  overflow-x: auto;
+  min-height: 250px;
+  font-family: var(--mono);
+}
+
+/* REPL */
+.repl {
+  border: 1px solid var(--line);
+  padding: 14px 16px;
+  background: rgba(245, 211, 0, 0.02);
+  margin: 18px 0 0;
+}
+.hint {
+  color: var(--fg-mute);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.replHistory {
+  max-height: 240px;
+  overflow-y: auto;
+}
+.replHistory .cmd::before {
+  content: '$ ';
+}
+.replInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+.replInput::before {
+  content: '$';
+  color: var(--green);
+}
+.replField {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+  caret-color: var(--fg);
+}
+.replField::placeholder {
+  color: var(--fg-mute);
+}
+
+@media (max-width: 700px) {
+  .ascii { font-size: 8px; }
+  .memGrid { grid-template-columns: repeat(20, 1fr); }
+  .pokerGrid { grid-template-columns: 1fr; }
+}
