@@ -1,0 +1,12 @@
+/* Minimal global reset only — every version owns its full look via CSS Modules. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}

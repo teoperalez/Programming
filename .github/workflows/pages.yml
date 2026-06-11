@@ -22,17 +22,36 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: portfolio
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: portfolio/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: npm run build
+        env:
+          # GitHub Pages serves project sites under /<repo>/
+          PAGES_BASE_PATH: /Programming
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload portfolio/ as Pages artifact
+      - name: Upload static export as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: portfolio
+          path: portfolio/out
 
   deploy:
     needs: build
