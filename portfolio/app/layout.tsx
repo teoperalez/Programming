@@ -3,13 +3,9 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://teoperalez.com'),
-  title: 'Teo Peralez — Frontend Engineer',
+  title: 'Teo Peralez — Frontend Engineer · Press SPACE to start',
   description:
-    'Frontend engineer who builds real-time interfaces over live emulator memory, AI pipelines, and solvers. 26 shipped repos.',
-  openGraph: {
-    title: 'Teo Peralez — Frontend Engineer',
-    description: 'Real-time UI over live systems. Pokémon speedrun overlays at 600 Hz, AI video pipelines, emulator hacking.',
-  },
+    'A playable portfolio. 2D RPG world built on a custom TypeScript game engine. Walk through the work of a frontend engineer who builds real-time interfaces over live systems.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Press+Start+2P&display=swap"
           rel="stylesheet"
         />
       </head>
