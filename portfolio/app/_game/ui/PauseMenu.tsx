@@ -9,15 +9,17 @@ interface Props {
   onJump: (projectId: string) => void;
   onReset: () => void;
   onReadMode: () => void;
+  onTitle: () => void;
 }
 
-export default function PauseMenu({ visited, onClose, onJump, onReset, onReadMode }: Props) {
+export default function PauseMenu({ visited, onClose, onJump, onReset, onReadMode, onTitle }: Props) {
   const [sel, setSel] = useState(0);
   const items = [
     ...BUILDINGS.map((b) => ({ kind: 'jump' as const, id: b.projectId, label: b.label, sub: b.sublabel, visited: visited.has(b.projectId) })),
-    { kind: 'read' as const, id: 'read', label: 'TEXT-ONLY VIEW', sub: 'accessibility', visited: false },
-    { kind: 'reset' as const, id: 'reset', label: 'TELEPORT TO START', sub: 'in front of TEO\'S HOUSE', visited: false },
-    { kind: 'close' as const, id: 'close', label: 'CLOSE MENU', sub: 'back to the game', visited: false },
+    { kind: 'read' as const, id: 'read', label: 'TEXT-ONLY VIEW', sub: 'accessibility · tab key', visited: false },
+    { kind: 'reset' as const, id: 'reset', label: 'TELEPORT TO PLAZA', sub: 'back to the fountain', visited: false },
+    { kind: 'title' as const, id: 'title', label: 'BACK TO TITLE', sub: 'main menu', visited: false },
+    { kind: 'close' as const, id: 'close', label: 'CLOSE MENU', sub: 'resume the game', visited: false },
   ];
 
   useEffect(() => {
@@ -29,13 +31,14 @@ export default function PauseMenu({ visited, onClose, onJump, onReset, onReadMod
         if (it.kind === 'jump') onJump(it.id);
         else if (it.kind === 'read') onReadMode();
         else if (it.kind === 'reset') onReset();
+        else if (it.kind === 'title') onTitle();
         else onClose();
         e.preventDefault();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [sel, items, onJump, onReadMode, onReset, onClose]);
+  }, [sel, items, onJump, onReadMode, onReset, onClose, onTitle]);
 
   return (
     <div onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -60,6 +63,7 @@ export default function PauseMenu({ visited, onClose, onJump, onReset, onReadMod
                 if (it.kind === 'jump') onJump(it.id);
                 else if (it.kind === 'read') onReadMode();
                 else if (it.kind === 'reset') onReset();
+                else if (it.kind === 'title') onTitle();
                 else onClose();
               }}
               onMouseEnter={() => setSel(i)}

@@ -17,6 +17,12 @@ export type GameEvents = {
   'console:log': { msg: string };
   'mode:read': void;
   'mode:game': void;
+  'fx:dust': { x: number; y: number; dir: 'up' | 'down' | 'left' | 'right' };
+  'fx:leaf': { x: number; y: number };
+  'fx:smoke': { x: number; y: number };
+  'fx:shake': { intensity: number; duration: number };
+  'fx:flash': { color: string; duration: number };
+  'fx:popup': { x: number; y: number; text: string; color?: string };
 };
 
 type Handler<E extends keyof GameEvents> = (payload: GameEvents[E]) => void;

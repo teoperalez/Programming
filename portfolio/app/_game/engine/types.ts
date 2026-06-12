@@ -16,7 +16,7 @@ export interface GameMetrics {
 export interface WorldRenderable {
   /** Anchor point used for y-sorting (usually the entity's feet). */
   sortY: number;
-  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }): void;
+  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, time?: number): void;
 }
 
 export interface Updatable {

@@ -1,10 +1,5 @@
 'use client';
 
-/**
- * Top-level game runtime. Owns the canvas, the game loop, the scene system,
- * and the entity registry. Renders the canvas + a React UI overlay layer.
- */
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { boot as bootAssets, TILE_SIZE, PAL } from './engine/Assets';
 import { Tilemap } from './engine/Tilemap';
@@ -12,13 +7,17 @@ import { Camera } from './engine/Camera';
 import { Input } from './engine/Input';
 import { Audio } from './engine/Audio';
 import { Player } from './engine/Player';
-import { Building, NPC } from './engine/Entities';
+import { Building, NPC, TreeEntity, FountainEntity, BeaconEntity } from './engine/Entities';
+import { Particles } from './engine/Particles';
 import { bus } from './engine/EventBus';
-import { BUILDINGS, NPCS, SPAWN, TILEMAP, WORLD_W, WORLD_H } from './data/world';
+import {
+  BUILDINGS, NPCS, SPAWN, TILEMAP, WORLD_W, WORLD_H,
+  TREES, FOUNTAIN, GAMEHOOK_ANTENNA, HOUSE_CHIMNEY,
+} from './data/world';
 import { DIALOGS, HOUSE_INTRO, ARCHIVE_INTRO, CONTACT_INTRO } from './data/dialogs';
-import type { GameMetrics } from './engine/types';
+import type { GameMetrics, WorldRenderable } from './engine/types';
 
-import BootScreen from './ui/BootScreen';
+import TitleScreen from './ui/TitleScreen';
 import Hud from './ui/Hud';
 import DialogBox from './ui/DialogBox';
 import Panel from './ui/Panel';
@@ -26,28 +25,25 @@ import PauseMenu from './ui/PauseMenu';
 import DevConsole from './ui/DevConsole';
 import ReadMode from './ui/ReadMode';
 import MobileControls from './ui/MobileControls';
+import FloatingPopups from './ui/FloatingPopups';
 import { loadSave, writeSave } from './state/saves';
 
-/* ============================================================ */
-/* Game state — single React state machine for UI overlays.     */
-/* ============================================================ */
-
-type Mode = 'boot' | 'play' | 'read';
-type Overlay = null | { kind: 'dialog'; lines: string[]; speaker?: string }
-             | { kind: 'panel'; id: string }
-             | { kind: 'menu' };
+type Mode = 'title' | 'play' | 'read';
+type Overlay = null
+  | { kind: 'dialog'; lines: string[]; speaker?: string }
+  | { kind: 'panel'; id: string }
+  | { kind: 'menu' };
 
 export default function Game() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<Mode>('boot');
+  const [mode, setMode] = useState<Mode>('title');
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [showConsole, setShowConsole] = useState(false);
   const [metrics, setMetrics] = useState<GameMetrics>({ fps: 0, frameMs: 0, drawMs: 0, entities: 0, visibleTiles: 0 });
   const [flags, setFlags] = useState<Set<string>>(new Set());
   const [visited, setVisited] = useState<Set<string>>(new Set());
 
-  /* ---- engine refs (mutable but not part of React state) ---- */
   const engineRef = useRef<{
     tilemap: Tilemap;
     camera: Camera;
@@ -56,18 +52,25 @@ export default function Game() {
     player: Player;
     buildings: Building[];
     npcs: NPC[];
-    paused: boolean;
-    blockMovement: boolean;
+    trees: TreeEntity[];
+    fountain: FountainEntity;
+    beacon: BeaconEntity;
+    particles: Particles;
+    /** active screen shake state */
+    shakeT: number;
+    shakeMag: number;
+    /** chimney smoke emit cooldown */
+    smokeCool: number;
+    time: number;
   } | null>(null);
 
   /* ============================================================ */
-  /* mount / unmount lifecycle                                    */
+  /* boot engine                                                  */
   /* ============================================================ */
 
   useEffect(() => {
     bootAssets();
 
-    // restore save
     const save = loadSave();
     const spawnX = save?.x ?? SPAWN.tx * TILE_SIZE;
     const spawnY = save?.y ?? SPAWN.ty * TILE_SIZE;
@@ -77,21 +80,20 @@ export default function Game() {
     const tilemap = new Tilemap(TILEMAP);
     const camera = new Camera();
     camera.setWorld(WORLD_W, WORLD_H);
+    camera.scale = 3;
     const input = new Input();
     input.attach();
     const audio = new Audio();
     audio.attach();
+    const particles = new Particles();
+    particles.attach();
     const player = new Player(spawnX, spawnY);
     if (save?.dir) player.dir = save.dir;
 
     const buildings = BUILDINGS.map((def) => {
       const b = new Building({
-        id: def.id,
-        sprite: def.sprite,
-        tx: def.tx,
-        ty: def.ty,
-        label: def.label,
-        sublabel: def.sublabel,
+        id: def.id, sprite: def.sprite, tx: def.tx, ty: def.ty,
+        label: def.label, sublabel: def.sublabel,
         onEnter: () => openBuilding(def.projectId),
       });
       b.stamp(tilemap);
@@ -99,27 +101,44 @@ export default function Game() {
     });
 
     const npcs = NPCS.map((def) => new NPC(def));
-    // stamp NPC positions as solid for the moment they spawn
-    for (const n of npcs) {
-      const tx = Math.floor(n.x / TILE_SIZE);
-      const ty = Math.floor(n.y / TILE_SIZE);
-      // we don't actually mark NPCs as permanently solid because they move,
-      // but we do prevent the player from overlapping via the AABB check below.
-      void tx; void ty;
+    const trees = TREES.map((t) => {
+      const e = new TreeEntity(t.tx, t.ty, t.kind === 'pine' ? 'tree-pine' : 'tree-round');
+      // mark trunk as solid
+      const i = tilemap.idx(t.tx, t.ty);
+      if (i >= 0) tilemap.solid[i] = true;
+      return e;
+    });
+
+    const fountain = new FountainEntity(FOUNTAIN.tx, FOUNTAIN.ty);
+    // mark fountain footprint solid (32x32 = 2x2 tiles)
+    for (let dy = 0; dy < 2; dy++) {
+      for (let dx = 0; dx < 2; dx++) {
+        const i = tilemap.idx(FOUNTAIN.tx + dx, FOUNTAIN.ty + dy);
+        if (i >= 0) tilemap.solid[i] = true;
+      }
     }
+
+    const beacon = new BeaconEntity(GAMEHOOK_ANTENNA.wx, GAMEHOOK_ANTENNA.wy);
 
     engineRef.current = {
       tilemap, camera, input, audio, player,
-      buildings, npcs,
-      paused: false,
-      blockMovement: false,
+      buildings, npcs, trees, fountain, beacon, particles,
+      shakeT: 0, shakeMag: 0, smokeCool: 0, time: 0,
     };
 
-    // Boot screen handles itself with a 1.4s timer, then sets mode='play'.
+    // shake handler
+    const offShake = bus.on('fx:shake', ({ intensity, duration }) => {
+      const e = engineRef.current;
+      if (!e) return;
+      e.shakeMag = Math.max(e.shakeMag, intensity);
+      e.shakeT = Math.max(e.shakeT, duration);
+    });
 
     return () => {
       input.detach();
       audio.detach();
+      particles.detach();
+      offShake();
       bus.clear();
       engineRef.current = null;
     };
@@ -127,16 +146,15 @@ export default function Game() {
   }, []);
 
   /* ============================================================ */
-  /* canvas size + game loop                                      */
+  /* game loop                                                    */
   /* ============================================================ */
 
   useEffect(() => {
-    if (mode === 'boot' || mode === 'read') return;
+    if (mode !== 'play') return;
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
     const eng = engineRef.current;
     if (!canvas || !wrap || !eng) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -149,7 +167,6 @@ export default function Game() {
       canvas.style.width = w + 'px';
       canvas.style.height = h + 'px';
       eng.camera.setViewport(w, h);
-      // pixel-perfect rendering
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.imageSmoothingEnabled = false;
     };
@@ -159,7 +176,6 @@ export default function Game() {
 
     eng.camera.centerOn(eng.player.x + 8, eng.player.y + 12, true);
 
-    /* fixed-timestep update + variable render */
     const STEP = 1 / 120;
     let acc = 0;
     let last = performance.now();
@@ -167,127 +183,152 @@ export default function Game() {
     let frames = 0;
     let fpsTick = last;
     let drawMs = 0;
+    let metricsTick = last;
 
     const update = (dt: number) => {
-      const { input, player, tilemap, npcs, camera, audio } = eng;
+      eng.time += dt;
 
-      if (input.pressed('console')) {
-        setShowConsole((v) => !v);
-      }
-      if (input.pressed('mode')) {
+      if (eng.input.pressed('console')) setShowConsole((v) => !v);
+      if (eng.input.pressed('mode')) {
         setMode('read');
         return;
       }
 
-      // overlay handling: dialog/panel/menu intercepts movement
       if (overlay) {
         if (overlay.kind === 'dialog') {
-          if (input.pressed('confirm') || input.pressed('cancel')) {
+          if (eng.input.pressed('confirm') || eng.input.pressed('cancel')) {
             bus.emit('dialog:advance', undefined);
           }
         } else if (overlay.kind === 'panel') {
-          if (input.pressed('cancel') || input.pressed('confirm')) {
-            audio.setMuted(false);
+          if (eng.input.pressed('cancel') || eng.input.pressed('confirm')) {
             setOverlay(null);
             bus.emit('audio:play', { sound: 'close' });
           }
         } else if (overlay.kind === 'menu') {
-          if (input.pressed('cancel') || input.pressed('menu')) {
+          if (eng.input.pressed('cancel') || eng.input.pressed('menu')) {
             setOverlay(null);
             bus.emit('audio:play', { sound: 'close' });
           }
         }
-        // NPCs still patrol while paused, but player stays still
-        for (const n of npcs) n.update(dt, tilemap);
-        camera.update(dt);
-        input.flip();
+        for (const n of eng.npcs) n.update(dt, eng.tilemap);
+        eng.camera.update(dt);
+        eng.input.flip();
         return;
       }
 
-      if (input.pressed('menu')) {
+      if (eng.input.pressed('menu')) {
         setOverlay({ kind: 'menu' });
         bus.emit('audio:play', { sound: 'open' });
-        input.flip();
+        eng.input.flip();
         return;
       }
 
-      // interaction probe (player presses Space facing something)
-      if (input.pressed('confirm')) {
-        const probe = player.facingProbe();
-        // buildings
+      if (eng.input.pressed('confirm')) {
+        const probe = eng.player.facingProbe();
         for (const b of eng.buildings) {
-          const ib = b.interactBounds();
-          if (aabb(probe, ib)) {
+          if (aabb(probe, b.interactBounds())) {
             b.interact();
-            input.flip();
+            eng.input.flip();
             return;
           }
         }
-        // npcs
         for (const n of eng.npcs) {
-          const ib = n.interactBounds();
-          if (aabb(probe, ib)) {
+          if (aabb(probe, n.interactBounds())) {
             n.interact();
-            input.flip();
+            eng.input.flip();
             return;
           }
         }
       }
 
-      // player + npc movement
-      player.update(dt, input, tilemap);
-      for (const n of npcs) n.update(dt, tilemap);
-      camera.centerOn(player.x + 8, player.y + 12, false);
-      camera.update(dt);
-      input.flip();
+      eng.player.update(dt, eng.input, eng.tilemap);
+      for (const n of eng.npcs) n.update(dt, eng.tilemap);
+      eng.particles.update(dt);
+
+      // chimney smoke emitter
+      eng.smokeCool -= dt;
+      if (eng.smokeCool <= 0) {
+        bus.emit('fx:smoke', { x: HOUSE_CHIMNEY.wx, y: HOUSE_CHIMNEY.wy });
+        eng.smokeCool = 0.55 + Math.random() * 0.4;
+      }
+
+      // screen shake decay
+      if (eng.shakeT > 0) {
+        eng.shakeT -= dt;
+        if (eng.shakeT <= 0) eng.shakeMag = 0;
+      }
+
+      eng.camera.centerOn(eng.player.x + 8, eng.player.y + 12, false);
+      eng.camera.update(dt);
+      eng.input.flip();
     };
 
     const render = () => {
-      const { tilemap, camera, player, buildings, npcs } = eng;
+      const e = eng;
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
-
       const t0 = performance.now();
+
+      // shake offset (sub-pixel via integer at draw time)
+      const sx = e.shakeMag > 0 ? Math.round((Math.random() - 0.5) * e.shakeMag * 2) : 0;
+      const sy = e.shakeMag > 0 ? Math.round((Math.random() - 0.5) * e.shakeMag * 2) : 0;
+
+      ctx.save();
+      ctx.translate(sx, sy);
+
       // sky
-      ctx.fillStyle = PAL.ink;
-      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#1d2030';
+      ctx.fillRect(-sx, -sy, w, h);
 
       // tiles
-      const visible = tilemap.draw(ctx, camera);
+      const visible = e.tilemap.draw(ctx, e.camera, e.time);
 
-      // collect renderables sorted by sortY
-      type R = { sortY: number; draw: (ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }) => void };
-      const renderables: R[] = [];
-      for (const b of buildings) renderables.push(b);
-      for (const n of npcs) renderables.push(n);
-      renderables.push(player);
-      renderables.sort((a, b) => a.sortY - b.sortY);
-      for (const r of renderables) r.draw(ctx, camera);
+      // y-sorted entities
+      const r: WorldRenderable[] = [];
+      for (const b of e.buildings) r.push(b);
+      for (const tr of e.trees) r.push(tr);
+      r.push(e.fountain);
+      for (const n of e.npcs) r.push(n);
+      r.push(e.player);
+      r.sort((a, b) => a.sortY - b.sortY);
+      for (const ent of r) ent.draw(ctx, e.camera, e.time);
 
-      // night/day overlay — very subtle vignette
-      const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.65);
-      g.addColorStop(0, 'rgba(0,0,0,0)');
-      g.addColorStop(1, 'rgba(0,0,0,0.35)');
-      ctx.fillStyle = g;
+      // particles (above world)
+      e.particles.draw(ctx, e.camera);
+
+      // beacon (always-on-top because it's a light source)
+      e.beacon.draw(ctx, e.camera, e.time);
+
+      // cloud shadow drifts across the world — subtle large soft circle
+      const cloudX = (e.time * 28) % (w + 600) - 300;
+      const cg = ctx.createRadialGradient(cloudX, 80, 0, cloudX, 80, 240);
+      cg.addColorStop(0, 'rgba(0,0,0,0.08)');
+      cg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = cg;
       ctx.fillRect(0, 0, w, h);
 
-      drawMs = performance.now() - t0;
-      setMetricsInternal(camera, visible, renderables.length);
-    };
+      // vignette
+      const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.65);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(1, 'rgba(0,0,0,0.32)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-sx, -sy, w, h);
 
-    let metricsTick = last;
-    const setMetricsInternal = (_cam: Camera, visTiles: number, ents: number) => {
-      // throttle UI updates to 4 Hz
+      ctx.restore();
+
+      drawMs = performance.now() - t0;
+
       const now = performance.now();
-      if (now - metricsTick < 250) return;
-      metricsTick = now;
-      setMetrics({
-        fps: Math.round(frames / ((now - fpsTick) / 1000)),
-        frameMs: 0, // set in loop below
-        drawMs,
-        entities: ents,
-        visibleTiles: visTiles,
-      });
+      if (now - metricsTick > 250) {
+        metricsTick = now;
+        setMetrics({
+          fps: Math.round(frames / Math.max(0.001, (now - fpsTick) / 1000)),
+          frameMs: 0,
+          drawMs,
+          entities: r.length + e.particles.count(),
+          visibleTiles: visible,
+        });
+      }
     };
 
     const loop = (now: number) => {
@@ -331,31 +372,24 @@ export default function Game() {
     const offFlag = bus.on('quest:flag', ({ flag }) => {
       setFlags((s) => new Set(s).add(flag));
     });
-    return () => {
-      offDialog(); offPanel(); offClosed(); offFlag();
-    };
+    return () => { offDialog(); offPanel(); offClosed(); offFlag(); };
   }, []);
 
-  /* save on player motion (debounced) */
   useEffect(() => {
     if (!engineRef.current) return;
     const t = setInterval(() => {
       const e = engineRef.current;
       if (!e) return;
       writeSave({
-        x: e.player.x,
-        y: e.player.y,
-        dir: e.player.dir,
-        flags: Array.from(flags),
-        visited: Array.from(visited),
-        ts: Date.now(),
+        x: e.player.x, y: e.player.y, dir: e.player.dir,
+        flags: Array.from(flags), visited: Array.from(visited), ts: Date.now(),
       });
     }, 4000);
     return () => clearInterval(t);
   }, [flags, visited]);
 
   /* ============================================================ */
-  /* building entries — dispatch correct overlay                  */
+  /* building entries                                             */
   /* ============================================================ */
 
   const openBuilding = useCallback((projectId: string) => {
@@ -364,12 +398,7 @@ export default function Game() {
       return;
     }
     if (projectId === 'archive') {
-      bus.emit('dialog:open', {
-        lines: ARCHIVE_INTRO,
-        speaker: 'THE ARCHIVE',
-        onClose: () => bus.emit('panel:open', { id: 'archive' }),
-      });
-      // open the archive panel immediately (no "open" follow-up since intro is short)
+      bus.emit('dialog:open', { lines: ARCHIVE_INTRO, speaker: 'THE ARCHIVE' });
       setTimeout(() => bus.emit('panel:open', { id: 'archive' }), 0);
       return;
     }
@@ -378,8 +407,7 @@ export default function Game() {
       setTimeout(() => bus.emit('panel:open', { id: 'contact' }), 0);
       return;
     }
-    const dlg = DIALOGS[projectId];
-    if (dlg) {
+    if (DIALOGS[projectId]) {
       bus.emit('panel:open', { id: projectId });
     }
   }, []);
@@ -388,8 +416,27 @@ export default function Game() {
   /* render                                                       */
   /* ============================================================ */
 
-  if (mode === 'boot') {
-    return <BootScreen onDone={() => setMode('play')} />;
+  if (mode === 'title') {
+    return (
+      <TitleScreen
+        hasSave={!!loadSave()}
+        onStart={(fromSave) => {
+          if (!fromSave) {
+            // wipe save
+            const e = engineRef.current;
+            if (e) {
+              e.player.x = SPAWN.tx * TILE_SIZE;
+              e.player.y = SPAWN.ty * TILE_SIZE;
+              e.player.dir = 'down';
+            }
+            setFlags(new Set());
+            setVisited(new Set());
+          }
+          setMode('play');
+        }}
+        onRead={() => setMode('read')}
+      />
+    );
   }
 
   if (mode === 'read') {
@@ -399,21 +446,11 @@ export default function Game() {
   return (
     <div
       ref={wrapRef}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: PAL.ink,
-        overflow: 'hidden',
-      }}
+      style={{ position: 'fixed', inset: 0, background: PAL.ink, overflow: 'hidden' }}
     >
       <canvas
         ref={canvasRef}
-        style={{
-          display: 'block',
-          width: '100%',
-          height: '100%',
-          imageRendering: 'pixelated',
-        }}
+        style={{ display: 'block', width: '100%', height: '100%', imageRendering: 'pixelated' }}
       />
 
       <Hud
@@ -421,6 +458,8 @@ export default function Game() {
         visited={visited}
         onMenuOpen={() => setOverlay({ kind: 'menu' })}
       />
+
+      <FloatingPopups />
 
       {overlay?.kind === 'dialog' && (
         <DialogBox lines={overlay.lines} speaker={overlay.speaker} onClose={() => setOverlay(null)} />
@@ -432,22 +471,16 @@ export default function Game() {
         <PauseMenu
           visited={visited}
           onClose={() => setOverlay(null)}
-          onJump={(projectId) => {
-            setOverlay(null);
-            openBuilding(projectId);
-          }}
+          onJump={(projectId) => { setOverlay(null); openBuilding(projectId); }}
           onReset={() => {
-            // teleport to spawn
             const e = engineRef.current;
             if (!e) return;
             e.player.x = SPAWN.tx * TILE_SIZE;
             e.player.y = SPAWN.ty * TILE_SIZE;
             setOverlay(null);
           }}
-          onReadMode={() => {
-            setOverlay(null);
-            setMode('read');
-          }}
+          onReadMode={() => { setOverlay(null); setMode('read'); }}
+          onTitle={() => { setOverlay(null); setMode('title'); }}
         />
       )}
 

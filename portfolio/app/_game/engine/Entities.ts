@@ -92,18 +92,24 @@ export class Building implements WorldRenderable, Interactable {
     return this.ty * TILE_SIZE + getSprite(this.sprite).frame.h - 4;
   }
 
-  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }): void {
+  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, _time?: number): void {
     const sheet = getSprite(this.sprite);
     const dx = Math.round((this.tx * TILE_SIZE - cam.x) * cam.scale);
     const dy = Math.round((this.ty * TILE_SIZE - cam.y) * cam.scale);
+    // body shadow before sprite so the silhouette overlaps cleanly
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    const bodyShadowY = dy + (sheet.frame.h - 4) * cam.scale;
+    ctx.fillRect(dx, bodyShadowY, sheet.frame.w * cam.scale, 2 * cam.scale);
     ctx.drawImage(sheet.canvas, 0, 0, sheet.frame.w, sheet.frame.h, dx, dy, sheet.frame.w * cam.scale, sheet.frame.h * cam.scale);
 
-    // sign text — drawn at the building's sign band (y = 16..24 inside sprite)
+    // sign text — pixel-perfect, centered on the painted sign band
     const signCenter = dx + (sheet.frame.w * cam.scale) / 2;
-    const signY = dy + 16 * cam.scale + 2;
+    const signY = dy + 18 * cam.scale;
     const pixelScale = Math.max(1, Math.floor(cam.scale * 0.5));
     const txt = this.label.toUpperCase();
     const w = txt.length * 6 * pixelScale;
+    // soft outline for legibility
+    drawText(ctx, txt, signCenter - w / 2 + 1, signY + 1, 'rgba(0,0,0,0.55)', pixelScale);
     drawText(ctx, txt, signCenter - w / 2, signY, PAL.paper, pixelScale);
   }
 }
@@ -204,17 +210,138 @@ export class NPC implements WorldRenderable, Interactable {
     const sheet = getSprite(this.sprite);
     const dirCol: Record<Dir, number> = { down: 0, up: 1, right: 2, left: 3 };
     const moving = this.waitT <= 0 && this.patrol && this.patrol.length > 0;
-    const row = moving && Math.floor(this.animT / 0.18) % 2 === 1 ? 1 : 0;
+    let row = 0;
+    if (moving) {
+      const phase = Math.floor(this.animT / 0.12) % 4;
+      row = phase === 0 ? 0 : phase === 1 ? 1 : phase === 2 ? 0 : 2;
+    }
     const col = dirCol[this.dir];
     const dx = Math.round((this.x - cam.x) * cam.scale);
-    const dy = Math.round((this.y - cam.y) * cam.scale);
+    const bob = moving ? (row === 0 ? 0 : 1) : 0;
+    const dy = Math.round((this.y - cam.y) * cam.scale) + bob;
     const dw = sheet.frame.w * cam.scale;
     const dh = sheet.frame.h * cam.scale;
-    ctx.drawImage(sheet.canvas, col * sheet.frame.w, row * sheet.frame.h, sheet.frame.w, sheet.frame.h, dx, dy, dw, dh);
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.beginPath();
-    ctx.ellipse(dx + dw / 2, dy + dh - 2, dw * 0.35, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(dx + dw / 2, dy + dh - 1, dw * 0.34, 3, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.drawImage(sheet.canvas, col * sheet.frame.w, row * sheet.frame.h, sheet.frame.w, sheet.frame.h, dx, dy, dw, dh);
+  }
+}
+
+/* ---------- Tree (walk-behind decoration) ---------- */
+
+export class TreeEntity implements WorldRenderable {
+  readonly tx: number;
+  readonly ty: number;
+  readonly sprite: 'tree-round' | 'tree-pine';
+  /** Phase offset so neighbouring trees don't all sway in sync. */
+  private phase: number;
+
+  constructor(tx: number, ty: number, sprite: 'tree-round' | 'tree-pine' = 'tree-round') {
+    this.tx = tx;
+    this.ty = ty;
+    this.sprite = sprite;
+    this.phase = (tx * 13 + ty * 7) % 100;
+  }
+
+  /** sort by trunk base so player overlaps canopy correctly */
+  get sortY(): number { return this.ty * TILE_SIZE + 30; }
+
+  /** trunk-only collision box: bottom 4×8 px of the trunk tile */
+  bounds(): import('./types').Rect {
+    return { x: this.tx * TILE_SIZE + 6, y: this.ty * TILE_SIZE + 22, w: 4, h: 8 };
+  }
+
+  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, time?: number): void {
+    const sheet = getSprite(this.sprite);
+    const t = time ?? 0;
+    // gentle horizontal sway of the canopy region (sub-pixel via integer scaling)
+    const sway = Math.round(Math.sin((t + this.phase * 0.1) * 1.3) * 1);
+    const dxBase = (this.tx * TILE_SIZE - cam.x) * cam.scale;
+    const dyBase = ((this.ty - 1) * TILE_SIZE - cam.y) * cam.scale;
+    // split into canopy (top half) and trunk (bottom half) so canopy sways
+    const halfH = 16;
+    // canopy
+    ctx.drawImage(
+      sheet.canvas, 0, 0, 16, halfH,
+      Math.round(dxBase + sway * cam.scale * 0.25), Math.round(dyBase),
+      16 * cam.scale, halfH * cam.scale,
+    );
+    // trunk + ground shadow (already baked into bottom rows)
+    ctx.drawImage(
+      sheet.canvas, 0, halfH, 16, 16,
+      Math.round(dxBase), Math.round(dyBase + halfH * cam.scale),
+      16 * cam.scale, 16 * cam.scale,
+    );
+  }
+}
+
+/* ---------- Fountain ---------- */
+
+export class FountainEntity implements WorldRenderable {
+  readonly tx: number;
+  readonly ty: number;
+
+  constructor(tx: number, ty: number) {
+    this.tx = tx;
+    this.ty = ty;
+  }
+
+  get sortY(): number { return this.ty * TILE_SIZE + 30; }
+
+  /** Two-tile-wide solid base for collision (footprint is 32×32). */
+  bounds(): import('./types').Rect {
+    return { x: this.tx * TILE_SIZE + 4, y: this.ty * TILE_SIZE + 16, w: 24, h: 14 };
+  }
+
+  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, time?: number): void {
+    const sheet = getSprite('fountain');
+    const frame = Math.floor(((time ?? 0) / 0.25)) % sheet.cols;
+    const dx = Math.round((this.tx * TILE_SIZE - cam.x) * cam.scale);
+    const dy = Math.round((this.ty * TILE_SIZE - cam.y) * cam.scale);
+    ctx.drawImage(
+      sheet.canvas,
+      frame * sheet.frame.w, 0,
+      sheet.frame.w, sheet.frame.h,
+      dx, dy,
+      sheet.frame.w * cam.scale, sheet.frame.h * cam.scale,
+    );
+  }
+}
+
+/* ---------- Antenna beacon (blinking light on GameHook roof) ---------- */
+
+export class BeaconEntity implements WorldRenderable {
+  readonly wx: number;
+  readonly wy: number;
+  /** seconds for one blink cycle */
+  readonly period: number;
+
+  constructor(wx: number, wy: number, period = 1.2) {
+    this.wx = wx; this.wy = wy; this.period = period;
+  }
+
+  get sortY(): number { return this.wy; }
+
+  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, time?: number): void {
+    const t = time ?? 0;
+    const phase = (t % this.period) / this.period;
+    const on = phase < 0.18;
+    if (!on) return;
+    const intensity = 1 - phase / 0.18;
+    const dx = Math.round((this.wx - cam.x) * cam.scale);
+    const dy = Math.round((this.wy - cam.y) * cam.scale);
+    const r = 8 * cam.scale * (0.6 + intensity * 0.7);
+    const grad = ctx.createRadialGradient(dx, dy, 0, dx, dy, r);
+    grad.addColorStop(0, `rgba(255,60,37,${intensity})`);
+    grad.addColorStop(0.4, `rgba(255,60,37,${intensity * 0.4})`);
+    grad.addColorStop(1, 'rgba(255,60,37,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(dx - r, dy - r, r * 2, r * 2);
+    // hard pixel center
+    ctx.fillStyle = `rgba(255,${Math.round(60 + intensity * 200)},${Math.round(37 + intensity * 100)},1)`;
+    ctx.fillRect(dx - cam.scale, dy - cam.scale, cam.scale * 2, cam.scale * 2);
   }
 }
 
@@ -248,5 +375,5 @@ export class Sign implements WorldRenderable, Interactable {
   }
 
   /** The 'sign' tile is drawn by the tilemap; nothing extra to render. */
-  draw(): void {}
+  draw(_ctx: CanvasRenderingContext2D, _cam: { x: number; y: number; scale: number }, _time?: number): void {}
 }
