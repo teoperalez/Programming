@@ -1,4 +1,34 @@
-/* Minimal global reset only — every version owns its full look via CSS Modules. */
+/* ---- design tokens ---- */
+:root {
+  /* surface */
+  --ink: #07070b;
+  --ink-2: #0e0e14;
+  --ink-3: #15151e;
+  --line: rgba(244, 236, 220, 0.08);
+  --line-2: rgba(244, 236, 220, 0.16);
+
+  /* paper */
+  --paper: #f4ecdc;
+  --paper-dim: #d8cfbe;
+  --paper-mute: #8a8377;
+
+  /* accent */
+  --fire: #ff3c25;
+  --fire-dim: #c12911;
+  --gold: #ffb800;
+  --plasma: #6cf4d2;
+  --plasma-dim: #44a892;
+
+  /* fonts */
+  --display: 'Instrument Serif', ui-serif, Georgia, serif;
+  --sans: 'Geist', 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.2, 0.6, 0.1, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
 *,
 *::before,
 *::after {
@@ -9,4 +39,54 @@ html,
 body {
   margin: 0;
   padding: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+html {
+  scroll-behavior: smooth;
+  /* hide native cursor only when our custom cursor is active */
+}
+
+body.cursor-on {
+  cursor: none;
+}
+
+body.cursor-on a,
+body.cursor-on button,
+body.cursor-on input,
+body.cursor-on select,
+body.cursor-on textarea,
+body.cursor-on [role='button'] {
+  cursor: none;
+}
+
+::selection {
+  background: var(--fire);
+  color: var(--ink);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* scrollbar — minimal */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--ink); }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fire-dim); }

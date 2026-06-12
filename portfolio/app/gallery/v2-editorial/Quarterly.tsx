@@ -110,7 +110,7 @@ export default function Quarterly() {
           <div>The Peralez Quarterly · Vol. I · No. 01</div>
           <div>Today · Independent Edition</div>
           <div className={styles.mastheadRight}>
-            <Link href="/" className={styles.backLink}>
+            <Link href="/gallery" className={styles.backLink}>
               ↩ all versions
             </Link>
             <a href="#features">features</a>
@@ -338,7 +338,7 @@ export default function Quarterly() {
               <em>app/v2-editorial/</em>, statically exported, no analytics.
             </p>
             <p>
-              <Link href="/" className={styles.backLink}>
+              <Link href="/gallery" className={styles.backLink}>
                 ↩ all versions
               </Link>
             </p>

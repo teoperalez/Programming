@@ -76,7 +76,7 @@ export default function Binder() {
 
   return (
     <div className={s.root}>
-      <Link href="/" className={s.allLink}>
+      <Link href="/gallery" className={s.allLink}>
         ↩ all versions
       </Link>
 
@@ -196,7 +196,7 @@ export default function Binder() {
 
         <div className={s.footer}>
           © 2026 · Pokémon, the binder aesthetic, and the typeface choices are an homage —
-          not an affiliation. All code is mine. · <Link href="/">↩ all versions</Link>
+          not an affiliation. All code is mine. · <Link href="/gallery">↩ all versions</Link>
         </div>
       </div>
 

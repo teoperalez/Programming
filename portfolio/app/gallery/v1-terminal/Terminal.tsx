@@ -100,7 +100,7 @@ export default function Terminal() {
 
       <div className={styles.frame}>
         <div className={styles.backRow}>
-          <Link href="/" className={styles.backlink}>
+          <Link href="/gallery" className={styles.backlink}>
             ↩ all versions
           </Link>
         </div>
@@ -295,7 +295,7 @@ export default function Terminal() {
         </div>
 
         <div className={styles.backRow}>
-          <Link href="/" className={styles.backlink}>
+          <Link href="/gallery" className={styles.backlink}>
             ↩ all versions
           </Link>
         </div>

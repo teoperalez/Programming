@@ -195,7 +195,7 @@ export default function Desktop() {
           </span>
         ))}
         <div className={s.mRight}>
-          <Link href="/" className={s.backLink}>
+          <Link href="/gallery" className={s.backLink}>
             ↩ all versions
           </Link>
           <span>{clock}</span>
