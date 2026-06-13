@@ -26,6 +26,9 @@ export const PAL = {
   grassLight: '#79c450',
   grassDim: '#3e7e1a',
   grassDark: '#2e6312',
+  // low-contrast flecks for soft field texture
+  grassFleck: '#54993170' as string,
+  grassFleckHi: '#69b34060' as string,
   water: '#3f7fe8',
   waterLight: '#6aa6f5',
   waterDim: '#2255b8',
@@ -126,18 +129,19 @@ function grassBase(seed: number): Painter {
   return (ctx, ox, oy) => {
     rect(ctx, ox, oy, TILE_SIZE, TILE_SIZE, PAL.grass);
     const r = rng(seed);
-    // mottled light/dark blades
-    for (let i = 0; i < 10; i++) {
+    // low-contrast mottling so large grass fields read as soft texture,
+    // never as noise. Flecks stay close to the base hue.
+    for (let i = 0; i < 7; i++) {
       const x = ox + Math.floor(r() * TILE_SIZE);
       const y = oy + Math.floor(r() * TILE_SIZE);
-      px(ctx, x, y, r() > 0.5 ? PAL.grassDim : PAL.grassLight);
+      px(ctx, x, y, r() > 0.5 ? PAL.grassFleck : PAL.grassFleckHi);
     }
-    // occasional 2px blade
-    for (let i = 0; i < 3; i++) {
-      const x = ox + Math.floor(r() * (TILE_SIZE - 1));
-      const y = oy + Math.floor(r() * (TILE_SIZE - 2));
-      px(ctx, x, y, PAL.grassDim);
-      px(ctx, x, y + 1, PAL.grassDim);
+    // a couple of faint blade marks
+    if (r() > 0.4) {
+      const x = ox + 3 + Math.floor(r() * 9);
+      const y = oy + 4 + Math.floor(r() * 8);
+      px(ctx, x, y, PAL.grassFleck);
+      px(ctx, x, y + 1, PAL.grassFleck);
     }
   };
 }
@@ -152,12 +156,18 @@ function buildTiles(): void {
   placeTile('grass-2', [grassBase(73)]);
   placeTile('grass-3', [grassBase(149)]);
 
+  // a gentle darker patch (mossy dip), only marginally darker than base
   placeTile('grass-dark', [(ctx, ox, oy) => {
-    rect(ctx, ox, oy, TILE_SIZE, TILE_SIZE, PAL.grassDim);
+    rect(ctx, ox, oy, TILE_SIZE, TILE_SIZE, PAL.grass);
     const r = rng(31);
-    for (let i = 0; i < 8; i++) {
-      px(ctx, ox + Math.floor(r() * 16), oy + Math.floor(r() * 16), r() > 0.5 ? PAL.grassDark : PAL.grass);
+    // soft irregular darker blob in the centre
+    ctx.fillStyle = '#4f9131';
+    for (let i = 0; i < 22; i++) {
+      const a = r() * Math.PI * 2;
+      const rad = r() * 6;
+      px(ctx, ox + 8 + Math.round(Math.cos(a) * rad), oy + 8 + Math.round(Math.sin(a) * rad), '#4f9131');
     }
+    for (let i = 0; i < 4; i++) px(ctx, ox + 4 + Math.floor(r() * 8), oy + 4 + Math.floor(r() * 8), '#458029');
   }]);
 
   // tall grass — 2 frames swaying
@@ -299,15 +309,20 @@ function buildTiles(): void {
     rect(ctx, ox + 4, oy + 7, 5, 1, PAL.ink);
   }]);
 
+  // warm sandstone plaza paving — reads as a town square, not a pit
   const cobble = (seed: number): Painter => (ctx, ox, oy) => {
-    rect(ctx, ox, oy, TILE_SIZE, TILE_SIZE, PAL.stone);
+    rect(ctx, ox, oy, TILE_SIZE, TILE_SIZE, '#b8a37a'); // mortar
     const r = rng(seed);
+    const stones = ['#cdb78c', '#c4ad82', '#d4be94', '#bda478'];
     for (let yy = 0; yy < 16; yy += 4) {
       for (let xx = 0; xx < 16; xx += 4) {
         const jx = ox + xx + ((yy / 4) % 2 ? 2 : 0);
         if (jx + 3 <= ox + 16) {
-          rect(ctx, jx, oy + yy, 3, 3, r() > 0.8 ? PAL.fog : '#3a3947');
-          px(ctx, jx, oy + yy, PAL.fog);
+          const c = stones[Math.floor(r() * stones.length)];
+          rect(ctx, jx, oy + yy, 3, 3, c);
+          // top-left highlight, bottom-right shade for a bevel
+          px(ctx, jx, oy + yy, '#e0cda2');
+          px(ctx, jx + 2, oy + yy + 2, '#9d8a64');
         }
       }
     }
@@ -632,6 +647,97 @@ function buildTree(id: string, kind: 'round' | 'pine'): void {
     ctx.fill();
   }
   sprites.set(id, { canvas: cv, frame: { w: 16, h: 32 }, cols: 1, rows: 1 });
+}
+
+/* ---- lamp post (10×28) ---- */
+
+function buildLamp(): void {
+  const cv = document.createElement('canvas');
+  cv.width = 10;
+  cv.height = 28;
+  const ctx = cv.getContext('2d')!;
+  // base
+  rect(ctx, 3, 25, 4, 3, PAL.outline);
+  rect(ctx, 2, 27, 6, 1, PAL.outline);
+  rect(ctx, 3, 25, 4, 1, '#3a3947');
+  // post
+  rect(ctx, 4, 8, 2, 18, PAL.stone);
+  rect(ctx, 4, 8, 1, 18, '#3a3947');
+  // cross arm hint
+  rect(ctx, 3, 9, 4, 1, PAL.stone);
+  // lantern housing
+  rect(ctx, 2, 2, 6, 7, PAL.outline);
+  rect(ctx, 3, 3, 4, 5, '#ffd27a');
+  rect(ctx, 3, 3, 4, 2, '#fff0c0');
+  // glass mullion
+  px(ctx, 4, 3, PAL.bronze);
+  px(ctx, 5, 6, PAL.bronze);
+  // cap
+  rect(ctx, 2, 1, 6, 1, PAL.outline);
+  rect(ctx, 4, 0, 2, 1, PAL.outline);
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(5, 27, 4, 1.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  sprites.set('lamp', { canvas: cv, frame: { w: 10, h: 28 }, cols: 1, rows: 1 });
+}
+
+/* ---- bush (16×14) ---- */
+
+function buildBush(berries: boolean): void {
+  const cv = document.createElement('canvas');
+  cv.width = 16;
+  cv.height = 14;
+  const ctx = cv.getContext('2d')!;
+  paintGrid(ctx, 0, 0, [
+    '...oooooooo.....',
+    '..oGGgggggGo....',
+    '.oGggggdgggGo...',
+    'oGgggggggggdGo..',
+    'oggdgggggggggo..',
+    'oggggggdggggdo..',
+    '.oggdggggggggo..',
+    '.odgggggdgggdo..',
+    '..oddgggggddo...',
+    '...ooooooooo....',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], { o: PAL.outline, G: '#79c450', g: '#4f9a2f', d: '#367018' });
+  if (berries) {
+    px(ctx, 5, 4, PAL.fire); px(ctx, 9, 6, PAL.fire); px(ctx, 11, 3, PAL.gold); px(ctx, 7, 7, PAL.fire);
+  }
+  // shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(8, 11, 6, 1.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  sprites.set(berries ? 'bush-berry' : 'bush', { canvas: cv, frame: { w: 16, h: 14 }, cols: 1, rows: 1 });
+}
+
+/* ---- flower bed (16×16 tile-like sprite) ---- */
+
+function buildFlowerbed(): void {
+  const cv = document.createElement('canvas');
+  cv.width = 16;
+  cv.height = 16;
+  const ctx = cv.getContext('2d')!;
+  // soil border
+  rect(ctx, 1, 1, 14, 14, PAL.brickDark);
+  rect(ctx, 2, 2, 12, 12, '#6b4a2a');
+  // flowers
+  const r = rng(5);
+  const cols = [PAL.fire, PAL.gold, PAL.violet, '#ff7ab0'];
+  for (let i = 0; i < 7; i++) {
+    const x = 3 + Math.floor(r() * 10);
+    const y = 3 + Math.floor(r() * 10);
+    const c = cols[Math.floor(r() * cols.length)];
+    px(ctx, x, y - 1, c); px(ctx, x - 1, y, c); px(ctx, x + 1, y, c); px(ctx, x, y, '#ffe9b8'); px(ctx, x, y + 1, c);
+    px(ctx, x, y + 2, PAL.grassDark);
+  }
+  sprites.set('flowerbed', { canvas: cv, frame: { w: 16, h: 16 }, cols: 1, rows: 1 });
 }
 
 /* ---- fountain (32×32, 3 frames) ---- */
@@ -1008,6 +1114,10 @@ export function boot(): void {
   buildTree('tree-pine', 'pine');
 
   buildFountain();
+  buildLamp();
+  buildBush(false);
+  buildBush(true);
+  buildFlowerbed();
 
   // buildings
   buildBuilding('bld-overlay', { wTiles: 6, hTiles: 5, roof: '#c12911', roofDark: '#8c1c0a', accent: PAL.water, prop: 'flags' });

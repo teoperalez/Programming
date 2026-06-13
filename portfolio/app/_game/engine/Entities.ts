@@ -96,21 +96,30 @@ export class Building implements WorldRenderable, Interactable {
     const sheet = getSprite(this.sprite);
     const dx = Math.round((this.tx * TILE_SIZE - cam.x) * cam.scale);
     const dy = Math.round((this.ty * TILE_SIZE - cam.y) * cam.scale);
-    // body shadow before sprite so the silhouette overlaps cleanly
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    const bodyShadowY = dy + (sheet.frame.h - 4) * cam.scale;
-    ctx.fillRect(dx, bodyShadowY, sheet.frame.w * cam.scale, 2 * cam.scale);
-    ctx.drawImage(sheet.canvas, 0, 0, sheet.frame.w, sheet.frame.h, dx, dy, sheet.frame.w * cam.scale, sheet.frame.h * cam.scale);
+    const w = sheet.frame.w * cam.scale;
+    const h = sheet.frame.h * cam.scale;
+    // soft ground shadow cast down-right, grounding the building
+    ctx.save();
+    const shY = dy + h - 3 * cam.scale;
+    const grad = ctx.createLinearGradient(0, shY, 0, shY + 7 * cam.scale);
+    grad.addColorStop(0, 'rgba(0,0,0,0.28)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(dx + w / 2 + 3 * cam.scale, shY + 2 * cam.scale, w * 0.52, 5 * cam.scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.drawImage(sheet.canvas, 0, 0, sheet.frame.w, sheet.frame.h, dx, dy, w, h);
 
     // sign text — pixel-perfect, centered on the painted sign band
     const signCenter = dx + (sheet.frame.w * cam.scale) / 2;
     const signY = dy + 18 * cam.scale;
     const pixelScale = Math.max(1, Math.floor(cam.scale * 0.5));
     const txt = this.label.toUpperCase();
-    const w = txt.length * 6 * pixelScale;
+    const tw = txt.length * 6 * pixelScale;
     // soft outline for legibility
-    drawText(ctx, txt, signCenter - w / 2 + 1, signY + 1, 'rgba(0,0,0,0.55)', pixelScale);
-    drawText(ctx, txt, signCenter - w / 2, signY, PAL.paper, pixelScale);
+    drawText(ctx, txt, signCenter - tw / 2 + 1, signY + 1, 'rgba(0,0,0,0.55)', pixelScale);
+    drawText(ctx, txt, signCenter - tw / 2, signY, PAL.paper, pixelScale);
   }
 }
 
@@ -342,6 +351,58 @@ export class BeaconEntity implements WorldRenderable {
     // hard pixel center
     ctx.fillStyle = `rgba(255,${Math.round(60 + intensity * 200)},${Math.round(37 + intensity * 100)},1)`;
     ctx.fillRect(dx - cam.scale, dy - cam.scale, cam.scale * 2, cam.scale * 2);
+  }
+}
+
+/* ---------- generic decorative prop (lamp, bush, flowerbed, …) ---------- */
+
+export class Prop implements WorldRenderable {
+  readonly sprite: string;
+  /** world pixel position of the sprite's top-left. */
+  readonly wx: number;
+  readonly wy: number;
+  /** optional warm light glow (lamp). radius in px, 0 = none. */
+  readonly glow: number;
+  /** sort offset added to the feet so e.g. a lamp sorts by its base. */
+  private footY: number;
+  private flickerSeed: number;
+
+  constructor(sprite: string, tx: number, ty: number, opts?: { glow?: number; footYPx?: number; solid?: boolean }) {
+    this.sprite = sprite;
+    this.wx = tx * TILE_SIZE;
+    this.wy = ty * TILE_SIZE;
+    this.glow = opts?.glow ?? 0;
+    this.footY = opts?.footYPx ?? 0;
+    this.flickerSeed = (tx * 17 + ty * 31) % 1000;
+  }
+
+  get sortY(): number {
+    const s = getSprite(this.sprite);
+    return this.wy + (this.footY || s.frame.h - 2);
+  }
+
+  draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, time?: number): void {
+    const s = getSprite(this.sprite);
+    const dx = Math.round((this.wx - cam.x) * cam.scale);
+    const dy = Math.round((this.wy - cam.y) * cam.scale);
+    // glow first (under the post so the post draws crisp on top)
+    if (this.glow > 0) {
+      const t = time ?? 0;
+      const flicker = 0.85 + 0.15 * Math.sin(t * 6 + this.flickerSeed);
+      const gx = dx + 5 * cam.scale;
+      const gy = dy + 5 * cam.scale;
+      const rad = this.glow * cam.scale * flicker;
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, rad);
+      g.addColorStop(0, `rgba(255,200,90,${0.45 * flicker})`);
+      g.addColorStop(0.5, `rgba(255,170,60,${0.18 * flicker})`);
+      g.addColorStop(1, 'rgba(255,170,60,0)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = g;
+      ctx.fillRect(gx - rad, gy - rad, rad * 2, rad * 2);
+      ctx.restore();
+    }
+    ctx.drawImage(s.canvas, 0, 0, s.frame.w, s.frame.h, dx, dy, s.frame.w * cam.scale, s.frame.h * cam.scale);
   }
 }
 

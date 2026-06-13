@@ -28,15 +28,30 @@ function buildMap(): TilemapDef {
   const idx = (x: number, y: number) => y * WORLD_W + x;
   const r = rng(13);
 
-  // grass mottling: 4 grass variants for visual richness
+  // grass mottling: near-identical variants for soft texture, plus sparse
+  // tall-grass / flower / mossy-patch accents that cluster rather than speckle
   for (let y = 0; y < WORLD_H; y++) {
     for (let x = 0; x < WORLD_W; x++) {
       const v = r();
-      if (v < 0.18) ground[idx(x, y)] = 'grass-2';
-      else if (v < 0.30) ground[idx(x, y)] = 'grass-3';
-      else if (v < 0.345) ground[idx(x, y)] = 'tallgrass';
-      else if (v < 0.36) ground[idx(x, y)] = 'flower';
-      else if (v < 0.38) ground[idx(x, y)] = 'grass-dark';
+      if (v < 0.22) ground[idx(x, y)] = 'grass-2';
+      else if (v < 0.40) ground[idx(x, y)] = 'grass-3';
+      else if (v < 0.425) ground[idx(x, y)] = 'grass-dark';
+      else if (v < 0.44) ground[idx(x, y)] = 'flower';
+    }
+  }
+  // tall-grass clusters (deliberate patches, not random speckle)
+  const tallPatches: Array<[number, number]> = [
+    [14, 8], [30, 7], [6, 28], [44, 24], [16, 30], [33, 29], [40, 8],
+  ];
+  for (const [cx, cy] of tallPatches) {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (r() < 0.4) continue;
+        const xx = cx + dx, yy = cy + dy;
+        if (xx > 1 && yy > 1 && xx < WORLD_W - 2 && yy < WORLD_H - 2) {
+          ground[idx(xx, yy)] = 'tallgrass';
+        }
+      }
     }
   }
 
@@ -212,6 +227,42 @@ export interface FountainPlacement {
 }
 
 export const FOUNTAIN: FountainPlacement = { tx: 24, ty: 18 };
+
+/* decorative props: lamps (with glow), bushes, flower beds */
+export interface PropPlacement {
+  sprite: 'lamp' | 'bush' | 'bush-berry' | 'flowerbed';
+  tx: number;
+  ty: number;
+  glow?: number;
+  solid?: boolean;
+}
+
+export const PROPS: PropPlacement[] = [
+  // lamp posts framing the plaza corners + along the central avenue
+  { sprite: 'lamp', tx: 21, ty: 16, glow: 26, solid: true },
+  { sprite: 'lamp', tx: 28, ty: 16, glow: 26, solid: true },
+  { sprite: 'lamp', tx: 21, ty: 22, glow: 26, solid: true },
+  { sprite: 'lamp', tx: 28, ty: 22, glow: 26, solid: true },
+  { sprite: 'lamp', tx: 23, ty: 9, glow: 24, solid: true },
+  { sprite: 'lamp', tx: 26, ty: 25, glow: 24, solid: true },
+  // flower beds flanking key doors
+  { sprite: 'flowerbed', tx: 9, ty: 10 },
+  { sprite: 'flowerbed', tx: 13, ty: 10 },
+  { sprite: 'flowerbed', tx: 23, ty: 10 },
+  { sprite: 'flowerbed', tx: 27, ty: 10 },
+  { sprite: 'flowerbed', tx: 37, ty: 10 },
+  { sprite: 'flowerbed', tx: 41, ty: 10 },
+  // bushes scattered to fill grass
+  { sprite: 'bush-berry', tx: 5, ty: 17, solid: true },
+  { sprite: 'bush', tx: 6, ty: 18, solid: true },
+  { sprite: 'bush', tx: 18, ty: 14, solid: true },
+  { sprite: 'bush-berry', tx: 31, ty: 14, solid: true },
+  { sprite: 'bush', tx: 19, ty: 23, solid: true },
+  { sprite: 'bush-berry', tx: 30, ty: 23, solid: true },
+  { sprite: 'bush', tx: 43, ty: 20, solid: true },
+  { sprite: 'bush', tx: 15, ty: 28, solid: true },
+  { sprite: 'bush-berry', tx: 34, ty: 28, solid: true },
+];
 
 /* ============================================================ */
 /* Buildings                                                    */

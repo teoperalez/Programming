@@ -7,12 +7,12 @@ import { Camera } from './engine/Camera';
 import { Input } from './engine/Input';
 import { Audio } from './engine/Audio';
 import { Player } from './engine/Player';
-import { Building, NPC, TreeEntity, FountainEntity, BeaconEntity } from './engine/Entities';
+import { Building, NPC, TreeEntity, FountainEntity, BeaconEntity, Prop } from './engine/Entities';
 import { Particles } from './engine/Particles';
 import { bus } from './engine/EventBus';
 import {
   BUILDINGS, NPCS, SPAWN, TILEMAP, WORLD_W, WORLD_H,
-  TREES, FOUNTAIN, GAMEHOOK_ANTENNA, HOUSE_CHIMNEY,
+  TREES, FOUNTAIN, PROPS, GAMEHOOK_ANTENNA, HOUSE_CHIMNEY,
 } from './data/world';
 import { DIALOGS, HOUSE_INTRO, ARCHIVE_INTRO, CONTACT_INTRO } from './data/dialogs';
 import type { GameMetrics, WorldRenderable } from './engine/types';
@@ -53,6 +53,7 @@ export default function Game() {
     buildings: Building[];
     npcs: NPC[];
     trees: TreeEntity[];
+    props: Prop[];
     fountain: FountainEntity;
     beacon: BeaconEntity;
     particles: Particles;
@@ -109,6 +110,16 @@ export default function Game() {
       return e;
     });
 
+    const props = PROPS.map((p) => {
+      const footY = p.sprite === 'flowerbed' ? 14 : undefined;
+      const e = new Prop(p.sprite, p.tx, p.ty, { glow: p.glow, footYPx: footY });
+      if (p.solid) {
+        const i = tilemap.idx(p.tx, p.ty);
+        if (i >= 0) tilemap.solid[i] = true;
+      }
+      return e;
+    });
+
     const fountain = new FountainEntity(FOUNTAIN.tx, FOUNTAIN.ty);
     // mark fountain footprint solid (32x32 = 2x2 tiles)
     for (let dy = 0; dy < 2; dy++) {
@@ -122,7 +133,7 @@ export default function Game() {
 
     engineRef.current = {
       tilemap, camera, input, audio, player,
-      buildings, npcs, trees, fountain, beacon, particles,
+      buildings, npcs, trees, props, fountain, beacon, particles,
       shakeT: 0, shakeMag: 0, smokeCool: 0, time: 0,
     };
 
@@ -287,6 +298,7 @@ export default function Game() {
       const r: WorldRenderable[] = [];
       for (const b of e.buildings) r.push(b);
       for (const tr of e.trees) r.push(tr);
+      for (const pr of e.props) r.push(pr);
       r.push(e.fountain);
       for (const n of e.npcs) r.push(n);
       r.push(e.player);
