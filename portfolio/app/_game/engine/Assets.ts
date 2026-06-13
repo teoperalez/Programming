@@ -170,20 +170,35 @@ function buildTiles(): void {
     for (let i = 0; i < 4; i++) px(ctx, ox + 4 + Math.floor(r() * 8), oy + 4 + Math.floor(r() * 8), '#458029');
   }]);
 
-  // tall grass — 2 frames swaying
+  // tall grass — RBY signature: distinct chunky 3-tuft pattern,
+  // two animation frames where tufts lean opposite directions.
   const tall = (lean: number): Painter => (ctx, ox, oy) => {
     rect(ctx, ox, oy, TILE_SIZE, TILE_SIZE, PAL.grass);
-    const r = rng(57);
-    for (let i = 0; i < 10; i++) px(ctx, ox + Math.floor(r() * 16), oy + Math.floor(r() * 16), PAL.grassLight);
-    // five blades
-    for (let b = 0; b < 5; b++) {
-      const bx = ox + 2 + b * 3;
-      rect(ctx, bx, oy + 8, 1, 7, PAL.grassDark);
-      rect(ctx, bx + lean, oy + 5, 1, 4, PAL.grassDim);
-      px(ctx, bx + lean * 2, oy + 4, PAL.grassDim);
-    }
+    // base grass mottling first
+    const r = rng(91 + lean);
+    for (let i = 0; i < 4; i++) px(ctx, ox + Math.floor(r() * 16), oy + Math.floor(r() * 16), PAL.grassFleck);
+    // three distinct tufts: left, center, right
+    const drawTuft = (lcx: number, lbY: number, leanDir: number) => {
+      const cx = ox + lcx;
+      const baseY = oy + lbY;
+      // outline & body — base lump
+      rect(ctx, cx - 1, baseY,     3, 1, PAL.outline);
+      rect(ctx, cx - 2, baseY - 1, 5, 1, PAL.outline);
+      rect(ctx, cx - 1, baseY - 1, 3, 1, '#2e6b14');
+      // blades fanning up
+      px(ctx, cx,              baseY - 2, PAL.outline);
+      px(ctx, cx + leanDir,    baseY - 2, PAL.outline);
+      px(ctx, cx - leanDir,    baseY - 2, PAL.outline);
+      px(ctx, cx,              baseY - 3, '#3e7e1a');
+      px(ctx, cx + leanDir,    baseY - 3, '#3e7e1a');
+      px(ctx, cx - leanDir,    baseY - 3, '#3e7e1a');
+      px(ctx, cx + leanDir * 2, baseY - 4, '#3e7e1a');
+    };
+    drawTuft(3, 13, lean);
+    drawTuft(8, 14, -lean);
+    drawTuft(13, 13, lean);
   };
-  placeTile('tallgrass', [tall(0), tall(1)], 0.7);
+  placeTile('tallgrass', [tall(0), tall(1)], 0.55);
 
   // flower — 2 frames (petals tilt)
   const flower = (sway: number): Painter => (ctx, ox, oy) => {
@@ -359,168 +374,182 @@ export function getSprite(id: string): SpriteSheet {
 }
 
 /* ---- characters (16×24, 4 facings × 3 frames) ---- */
+/* RBY-influenced trainer: chunky cap with brim, light jacket trim, plain
+ * dark pants. Designed at 16×24 (head 6, torso 9, legs 9) with hard
+ * 1px outlines and 4-color silhouettes per layer. */
 
 interface CharColors {
+  /** cap crown */
+  cap: string;
+  /** cap brim + dark accents */
+  capDark: string;
   hair: string;
-  hairLight: string;
+  skin: string;
+  skinDark: string;
+  /** jacket main */
   jacket: string;
-  jacketLight: string;
+  /** jacket trim (collar, cuffs, zipper) */
+  jacketTrim: string;
   jacketDark: string;
   pants: string;
   boots: string;
-  skin: string;
-  skinShade: string;
-  hat?: string;
 }
 
 const mirror = (rows: string[]): string[] => rows.map((r) => r.split('').reverse().join(''));
 
-/** Build head rows (9 rows) per facing. Each string is exactly 16 chars. */
+/** Head + cap rows (8 rows) per facing. Exactly 16 chars wide.
+ * Legend: o=outline, c=cap, C=cap-light, b=brim-dark, h=hair, s=skin,
+ * S=skin-shade, e=eye(outline), p=pupil(outline). */
 function headRows(face: 'down' | 'up' | 'side'): string[] {
   if (face === 'down') {
+    // peaked cap pointing forward, brim above the eyes
     return [
-      '.....oooooo.....',
-      '....ohhhhhhho...',
-      '...ohhHHHHHhho..',
-      '...ohhhhhhhhho..',
-      '...ohssssssho...',
-      '...oseSssSseo...',
-      '...osssssssso...',
-      '....ossseeso....',
+      '.....oCCCCo.....',
+      '....occCCcco....',
+      '...oCCCCCcCco...',
+      '...obbbbbbbbo...',
+      '...ohshhhhhsho..',
+      '...oshseеsshso..'.replace(/е/g, 'e'),
+      '....osssssso....',
       '.....oSSSSo.....',
     ];
   }
   if (face === 'up') {
+    // back of head, cap dominates
     return [
-      '.....oooooo.....',
-      '....ohhhhhhho...',
-      '...ohHHHHHHHho..',
-      '...ohhhhhhhhho..',
-      '...ohhhhhhhhho..',
-      '...ohhhhhhhhho..',
-      '...ohhhhhhhhho..',
-      '....ohhhhhhho...',
-      '.....ohhhhho....',
+      '.....oCCCCo.....',
+      '....occCCcco....',
+      '...oCccCCCCco...',
+      '...occcCCccco...',
+      '...ohhhhhhhho...',
+      '....ohhhhhho....',
+      '.....ohhhho.....',
+      '......oooo......',
     ];
   }
-  // side — right-facing (col index 2, mirror to face left)
+  // side — right-facing (brim sticks out forward at +x)
   return [
-    '.....oooooo.....',
-    '....ohhhhhhho...',
-    '...ohhHHHHhhho..',
-    '...ohhhhhhhhho..',
-    '...ohsssssso....',
-    '...ohSeeesso....',
-    '...ohssssso.....',
-    '....ossssSo.....',
-    '.....ossso......',
+    '.....oCCCCob....',
+    '....occCCcbbo...',
+    '...oCccCCcobo...',
+    '...obbbbbbbo....',
+    '...ohshhhso.....',
+    '...oshseso......',
+    '....ossso.......',
+    '.....oSSo.......',
   ];
 }
 
-/** Torso rows (8 rows) per facing. */
+/** Torso rows (9 rows) per facing. j=jacket, J=jacket-light(trim),
+ *  d=jacket-dark, B=backpack-strap (visible in side/back), s=skin. */
 function torsoRows(face: 'down' | 'up' | 'side'): string[] {
   if (face === 'down') {
     return [
-      '....odjjjjjdo...',
-      '...ojJjjjjjJjo..',
-      '..ojJjjddjjjJo..',
-      '..ojjjdJJdjjjo..',
-      '..osjjdJJdjjso..',
-      '..osjjdjjdjjso..',
-      '...ojjjjjjjjo...',
-      '...oddddddddo...',
+      '....ojJJJJJjo...',
+      '...ojjjJJjjjjo..',
+      '..ojjjjJJjjjjjo.',
+      '..ojjjjJJjjjjjo.',
+      '..osjjjJJjjjjso.',
+      '..osjjjJJjjjjso.',
+      '..osjjjJJjjjjso.',
+      '...ojjjjjjjjjo..',
+      '...oddddddddoo..',
     ];
   }
   if (face === 'up') {
+    // back: visible backpack strap silhouette
     return [
       '....odddddddo...',
-      '...odjjjjjjjdo..',
-      '..odjjjjjjjjjdo.',
-      '..odjjjjjjjjjdo.',
-      '..osjjjjjjjjso..',
-      '..osjjjjjjjjso..',
+      '...odBBBBBBBdo..',
+      '..odBjjjjjjBdo..',
+      '..odBjjjjjjBdo..',
+      '..odBjjjjjjBdo..',
+      '..odBjjjjjjBdo..',
+      '..odBjjjjjjBdo..',
       '...ojjjjjjjjo...',
       '...oddddddddo...',
     ];
   }
-  // side
+  // side facing right
   return [
-    '....odjjjjjdo...',
-    '....ojJjjjjjo...',
-    '...ojJjjjjjjo...',
-    '...ojjjdjjjjo...',
-    '...ojsjdjjjso...',
-    '...ojsjdjjjso...',
+    '....ojJJJJjo....',
+    '...ojJjJJjjjo...',
+    '...ojjjJJjjBo...',
+    '...ojjjJJjjBo...',
+    '...osjjJJjjBo...',
+    '...osjjJjjjBo...',
+    '...osjjjjjjBo...',
     '....ojjjjjjo....',
-    '....oddddddo....',
+    '....odddddoo....',
   ];
 }
 
-/** Leg rows (7 rows): stand / stepA / stepB. Each row exactly 16 chars. */
+/** Leg rows (7 rows): stand / stepA / stepB. p=pants, k=pants-dark,
+ *  z=boots, exactly 16 chars wide. */
 function legRows(variant: 'stand' | 'a' | 'b', face: 'down' | 'up' | 'side'): string[] {
   if (face === 'side') {
     if (variant === 'stand') {
       return [
         '....opppppppo...',
+        '....opkppkppo...',
         '....opppppppo...',
-        '....oppppppo....',
         '.....oppppo.....',
-        '.....obbbbo.....',
-        '.....obbbbo.....',
+        '.....ozzzzo.....',
+        '.....oozzoo.....',
         '......oooo......',
       ];
     }
     if (variant === 'a') {
       return [
         '....opppppppo...',
-        '....opppppppo...',
-        '...oppoooppo....',
-        '..oppo..oppo....',
-        '..obbo..obbo....',
-        '..ooo....ooo....',
+        '....opkppkppo...',
+        '...oppooppppo...',
+        '..oppoo.ozppo...',
+        '..ozzo..ozzo....',
+        '..oooo..oooo....',
         '................',
       ];
     }
     return [
       '....opppppppo...',
-      '....opppppppo...',
-      '....oppoopppo...',
-      '....oppo.oppoo..',
-      '....obboo.obbo..',
-      '....oooo..oooo..',
+      '....opkppkppo...',
+      '...opppooppo....',
+      '...opzo.oppoo...',
+      '...ozzo..ozzo...',
+      '...oooo..oooo...',
       '................',
     ];
   }
-  // down / up share leg silhouettes (front + back legs touch)
+  // down / up share leg silhouettes
   if (variant === 'stand') {
     return [
       '....opppppppo...',
-      '....opppppppo...',
+      '....opkppkppo...',
       '....opp..ppo....',
       '....opp..ppo....',
-      '....obb..bbo....',
-      '....obb..bbo....',
+      '....ozz..zzo....',
+      '....ozz..zzo....',
       '.....oo..oo.....',
     ];
   }
   if (variant === 'a') {
     return [
       '....opppppppo...',
-      '....opppppppo...',
+      '....opkppkppo...',
       '...oppo..ppo....',
       '..oppo..oppo....',
-      '..obbo..obbo....',
-      '..ooo....ooo....',
+      '..ozzo..ozzo....',
+      '..oooo..oooo....',
       '................',
     ];
   }
   return [
     '....opppppppo...',
-    '....opppppppo...',
+    '....opkppkppo...',
+    '....oppoopppo...',
     '....oppo.oppo...',
-    '....oppoooppo...',
-    '....obbo.obboo..',
-    '....oooo..oooo..',
+    '....ozzo.ozzo...',
+    '....oooo.oooo...',
     '................',
   ];
 }
@@ -528,16 +557,20 @@ function legRows(variant: 'stand' | 'a' | 'b', face: 'down' | 'up' | 'side'): st
 function charMap(c: CharColors): Record<string, string> {
   return {
     o: PAL.outline,
-    h: c.hat ?? c.hair,
-    H: c.hat ? c.hat : c.hairLight,
+    c: c.cap,
+    C: c.cap, // (kept for compatibility — same as c)
+    b: c.capDark, // brim (when in head row context)
+    h: c.hair,
     s: c.skin,
-    S: c.skinShade,
+    S: c.skinDark,
     e: PAL.outline,
     j: c.jacket,
-    J: c.jacketLight,
+    J: c.jacketTrim,
     d: c.jacketDark,
+    B: c.jacketDark, // backpack strap
     p: c.pants,
-    b: c.boots,
+    k: PAL.outline, // pants seam / dark stripe
+    z: c.boots,
   };
 }
 
@@ -559,6 +592,7 @@ function buildCharacter(id: string, colors: CharColors): void {
 
   facings.forEach(({ face, flip }, col) => {
     variants.forEach((variant, row) => {
+      // head 8 + torso 9 + legs 7 = 24 rows total
       let rows = [...headRows(face), ...torsoRows(face), ...legRows(variant, face)];
       if (flip) rows = mirror(rows);
       paintGrid(ctx, col * FW, row * FH, rows, map);
@@ -568,9 +602,51 @@ function buildCharacter(id: string, colors: CharColors): void {
   sprites.set(id, { canvas: cv, frame: { w: FW, h: FH }, cols: 4, rows: 3 });
 }
 
-/* ---- trees (16×32, walk-behind canopy) ---- */
+/* ---- trees (RBY-style 16×16 squat single-tile, plus a 16×32 tall
+ * variant for the world borders) ---- */
 
-function buildTree(id: string, kind: 'round' | 'pine'): void {
+function buildTree(id: string, kind: 'round' | 'pine' | 'rby-squat'): void {
+  if (kind === 'rby-squat') {
+    // Iconic Pallet/Viridian-style tree: single 16×16 tile, plump round
+    // canopy with horizontal striping, tiny trunk peek at the bottom.
+    const cv = document.createElement('canvas');
+    cv.width = 16;
+    cv.height = 16;
+    const ctx = cv.getContext('2d')!;
+    paintGrid(ctx, 0, 0, [
+      '....ooooooo.....',
+      '..ooGGGGGGGoo...',
+      '.oGGggGGGGGGGo..',
+      'oGGgggdgggGGGo..',
+      'oGggggggggggGGo.',
+      'oggdgggggggggGo.',
+      'oggggggggdgggGo.',
+      'ogggdgggggggggo.',
+      'odggggggdggggdo.',
+      'oddgggggggggddo.',
+      '.oddggdgggdddo..',
+      '..oddddddddoo...',
+      '...oooooooo.....',
+      '.....obtbo......',
+      '.....obtbo......',
+      '......oo........',
+    ], {
+      o: PAL.outline,
+      G: '#7fcc4a',   // light leaf
+      g: '#4a9a28',   // mid leaf (canopy base)
+      d: '#2e6b14',   // shadow stripe
+      b: '#6b4226',
+      t: '#4e2f1a',
+    });
+    // small drop shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath();
+    ctx.ellipse(7.5, 14.5, 4.5, 1.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    sprites.set(id, { canvas: cv, frame: { w: 16, h: 16 }, cols: 1, rows: 1 });
+    return;
+  }
+  // 16×32 tall trees (round & pine) for the dense wood-frame at world edges.
   const cv = document.createElement('canvas');
   cv.width = 16;
   cv.height = 32;
@@ -578,41 +654,38 @@ function buildTree(id: string, kind: 'round' | 'pine'): void {
   if (kind === 'round') {
     paintGrid(ctx, 0, 0, [
       '....oooooo......',
-      '..oo GGGG oo....'.replace(/ /g, 'g'),
-      '.ogGGGGGGGGo....',
-      '.ogGGgggGGGgo...',
-      'ogGGggggggGGgo..',
-      'ogGgggggggggGo..',
-      'ogggggggggggGo..',
-      'ogggdggggdgggo..',
-      '.ogggggdggggo...',
-      '.odggggggggdo...',
-      '..oddggggddo....',
-      '...oddddddo.....',
-      '....obbddo......',
-      '.....obbo.......',
-      '.....obbo.......',
-      '.....obbo.......',
-    ], {
-      o: PAL.outline, G: PAL.grassLight, g: PAL.grass, d: PAL.grassDim, b: '#6b4226', B: '#4e2f1a',
-    });
-    // trunk lower half (rows 16-31)
+      '..oogGGGGgoo....',
+      '.oGGGGGGGGGGo...',
+      '.oGGgggdgGGGo...',
+      'oGGggggggggGGo..',
+      'oGgggggggggggGo.',
+      'oggggdgggggggGo.',
+      'ogggdggggdgggGo.',
+      'oggggggdggggggo.',
+      'odgggggggggggdo.',
+      '.odgggdgggdgdo..',
+      '..oddddddddoo...',
+      '...oooooooo.....',
+      '.....obbbo......',
+      '.....obtbo......',
+      '.....obtbo......',
+    ], { o: PAL.outline, G: '#7fcc4a', g: '#4a9a28', d: '#2e6b14', b: '#6b4226', t: '#4e2f1a' });
     paintGrid(ctx, 0, 16, [
-      '.....obbo.......',
-      '....obbbbo......',
-      '....obBbbo......',
-      '....obBbbo......',
-      '....obbbbo......',
-      '...ooBbbBoo.....',
+      '.....obtbo......',
+      '....obbtbbo.....',
+      '....obtttbo.....',
+      '....obbtbbo.....',
+      '....obttttbo....',
+      '...oobbbbboo....',
       '..o.oooooo.o....',
       '................',
-    ], { o: PAL.outline, b: '#6b4226', B: '#4e2f1a' });
-    // ground shadow
+    ], { o: PAL.outline, b: '#6b4226', t: '#4e2f1a' });
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath();
     ctx.ellipse(7.5, 23, 6, 2, 0, 0, Math.PI * 2);
     ctx.fill();
   } else {
+    // pine — tall conifer
     paintGrid(ctx, 0, 0, [
       '.......oo.......',
       '......oGGo......',
@@ -629,18 +702,18 @@ function buildTree(id: string, kind: 'round' | 'pine'): void {
       '.ogggdgggggddgo.',
       'ogggggggdgggggdo',
       '.oooooobbooooo..',
-      '......obbo......',
-    ], { o: PAL.outline, G: PAL.grassLight, g: PAL.grassDim, d: PAL.grassDark, b: '#6b4226' });
+      '......obtbo.....',
+    ], { o: PAL.outline, G: '#7fcc4a', g: '#4a9a28', d: '#2e6b14', b: '#6b4226', t: '#4e2f1a' });
     paintGrid(ctx, 0, 16, [
-      '......obbo......',
-      '.....obbbbo.....',
-      '.....obBbbo.....',
-      '.....obbbbo.....',
-      '....ooooooo.....',
+      '......obtbo.....',
+      '.....obtttbo....',
+      '.....obtbtbo....',
+      '.....obtttbo....',
+      '....ooooooooo...',
       '................',
       '................',
       '................',
-    ], { o: PAL.outline, b: '#6b4226', B: '#4e2f1a' });
+    ], { o: PAL.outline, b: '#6b4226', t: '#4e2f1a' });
     ctx.fillStyle = 'rgba(0,0,0,0.22)';
     ctx.beginPath();
     ctx.ellipse(7.5, 21, 5.5, 2, 0, 0, Math.PI * 2);
@@ -800,121 +873,151 @@ function buildBuilding(id: string, st: BuildingStyle): void {
   cv.height = H;
   const ctx = cv.getContext('2d')!;
 
-  const roofH = Math.floor(H * 0.32);
-
-  // ---- walls: plaster with base trim and corner quoins ----
-  rect(ctx, 0, roofH, W, H - roofH, PAL.plaster);
-  rect(ctx, 0, roofH, W, 2, 'rgba(0,0,0,0.28)'); // eave shadow
-  rect(ctx, 0, H - 5, W, 5, PLASTER_SHADE);
+  // ---- RBY-style peaked roof: triangular silhouette with shingle rows ----
+  // The roof occupies the top ~38% of the building; sides taper inward.
+  const roofH = Math.floor(H * 0.38);
+  const roofPad = 2; // how far the roof base overhangs the wall
+  // First fill the wall area (will be drawn over).
+  rect(ctx, 0, roofH, W, H - roofH, '#f4ecdc');                // white walls (RBY look)
+  rect(ctx, 0, roofH, W, 3, 'rgba(0,0,0,0.32)');               // deep eave shadow
+  rect(ctx, 0, H - 5, W, 5, '#c0b291');                        // foundation strip
   rect(ctx, 0, H - 2, W, 2, PAL.outline);
-  // quoins
-  for (let y = roofH + 3; y < H - 5; y += 5) {
-    rect(ctx, 0, y, 3, 3, PLASTER_SHADE);
-    rect(ctx, W - 3, y, 3, 3, PLASTER_SHADE);
-  }
-  // wall texture flecks
-  const r = rng(id.length * 31);
-  for (let i = 0; i < W / 2; i++) {
-    px(ctx, Math.floor(r() * W), roofH + 3 + Math.floor(r() * (H - roofH - 9)), 'rgba(0,0,0,0.05)');
-  }
 
-  // ---- roof: shingle rows with ridge ----
-  rect(ctx, 0, 0, W, roofH, st.roof);
-  for (let y = 3; y < roofH; y += 4) {
-    rect(ctx, 0, y, W, 1, st.roofDark);
-    for (let x = ((y / 4) % 2) * 4; x < W; x += 8) {
-      px(ctx, x, y - 1, st.roofDark);
+  // Roof — peaked: rows narrow toward the top
+  const peakInset = (y: number) => {
+    // 0 at the base of the roof, max inset at the peak
+    const t = 1 - y / roofH;
+    return Math.floor(t * (W / 2 - 4));
+  };
+  for (let y = 0; y < roofH; y++) {
+    const inset = peakInset(y);
+    // outline
+    px(ctx, inset, y, PAL.outline);
+    px(ctx, W - 1 - inset, y, PAL.outline);
+    // shingle rows: alternate darker stripes every 3 px
+    const baseColor = y % 6 < 3 ? st.roof : st.roofDark;
+    for (let x = inset + 1; x < W - 1 - inset; x++) {
+      px(ctx, x, y, baseColor);
+    }
+    // shingle row separators
+    if (y % 3 === 2) {
+      for (let x = inset + 1; x < W - 1 - inset; x++) {
+        px(ctx, x, y, st.roofDark);
+      }
+    }
+    // staggered nail dots every other row
+    if (y % 3 === 1) {
+      const off = (y / 3 | 0) % 2 ? 2 : 4;
+      for (let x = inset + 1 + off; x < W - 1 - inset; x += 6) {
+        px(ctx, x, y, st.roofDark);
+      }
     }
   }
-  rect(ctx, 0, 0, W, 2, PAL.outline);
-  rect(ctx, 0, 2, W, 1, 'rgba(255,255,255,0.25)');
-  // eaves overhang
-  rect(ctx, -1, roofH - 3, W + 2, 3, st.roofDark);
-  rect(ctx, 0, roofH - 1, W, 1, PAL.outline);
+  // bright ridge highlight at the peak
+  for (let x = Math.floor(W / 2) - 4; x <= Math.floor(W / 2) + 4; x++) {
+    px(ctx, x, 1, 'rgba(255,255,255,0.45)');
+  }
+  // eaves: thick dark strip at the very bottom of the roof
+  rect(ctx, -roofPad, roofH - 3, W + roofPad * 2, 3, st.roofDark);
+  rect(ctx, -roofPad, roofH - 1, W + roofPad * 2, 1, PAL.outline);
+  rect(ctx, -roofPad, roofH, W + roofPad * 2, 1, 'rgba(0,0,0,0.35)');
 
-  // ---- door: arched, centered, with steps ----
-  const dx = Math.floor(W / 2) - 9;
-  const doorW = 18, doorH = 26;
-  const dy = H - doorH - 2;
-  // arch outline
-  rect(ctx, dx - 1, dy - 1, doorW + 2, doorH + 1, PAL.outline);
-  ctx.fillStyle = PAL.outline;
-  ctx.fillRect(dx + 1, dy - 3, doorW - 2, 2);
-  // frame
-  rect(ctx, dx, dy, doorW, doorH, PAL.brickDark);
-  rect(ctx, dx + 2, dy - 1, doorW - 4, 2, PAL.brickDark);
-  // door leaf
-  rect(ctx, dx + 2, dy + 2, doorW - 4, doorH - 4, PAL.bronze);
-  rect(ctx, dx + 2, dy + 2, doorW - 4, 2, PAL.gold);
-  rect(ctx, dx + 8, dy + 2, 2, doorH - 4, PAL.brickDark); // double-door split
-  px(ctx, dx + 6, dy + 13, PAL.gold);
-  px(ctx, dx + 11, dy + 13, PAL.gold);
-  // glow from inside (under door)
-  rect(ctx, dx + 2, H - 4, doorW - 4, 2, 'rgba(255,184,0,0.5)');
-  // steps
-  rect(ctx, dx - 2, H - 2, doorW + 4, 2, PAL.fog);
+  // ---- wall texture: subtle plaster grain ----
+  const rgr = rng(id.length * 31 + 7);
+  for (let i = 0; i < W / 3; i++) {
+    px(ctx, Math.floor(rgr() * W), roofH + 4 + Math.floor(rgr() * (H - roofH - 10)), 'rgba(0,0,0,0.04)');
+  }
 
-  // ---- windows: framed, lit, two-tone glow + reflection slash ----
-  const winY = roofH + 8;
-  const winW = 14, winH = 14;
+  // ---- windows: classic 4-pane RBY style ----
+  const winY = roofH + 9;
+  const winW = 10, winH = 12;
   const drawWindow = (wx: number) => {
+    // dark frame
     rect(ctx, wx - 1, winY - 1, winW + 2, winH + 2, PAL.outline);
-    rect(ctx, wx, winY, winW, winH, PAL.brickDark);
-    rect(ctx, wx + 1, winY + 1, winW - 2, winH - 2, '#ffd27a');
-    rect(ctx, wx + 1, winY + 1, winW - 2, 5, '#ffe9b8');
-    // mullions
-    rect(ctx, wx + winW / 2 - 1, winY, 2, winH, PAL.brickDark);
-    rect(ctx, wx, winY + winH / 2 - 1, winW, 2, PAL.brickDark);
-    // reflection slash
-    px(ctx, wx + 2, winY + 2, '#ffffff');
-    px(ctx, wx + 3, winY + 3, '#ffffff');
+    rect(ctx, wx, winY, winW, winH, '#1a2855'); // dark teal pane
+    // lit highlight in upper-left two quadrants
+    rect(ctx, wx + 1, winY + 1, winW / 2 - 1, winH / 2 - 1, '#7dc4ff');
+    rect(ctx, wx + 1, winY + 1, winW / 2 - 1, 2, '#bce4ff');
+    // mullions (window crossbars)
+    rect(ctx, wx + winW / 2 - 1, winY, 2, winH, PAL.outline);
+    rect(ctx, wx, winY + winH / 2 - 1, winW, 2, PAL.outline);
     // sill
-    rect(ctx, wx - 2, winY + winH + 1, winW + 4, 2, PLASTER_SHADE);
-    rect(ctx, wx - 2, winY + winH + 3, winW + 4, 1, 'rgba(0,0,0,0.2)');
+    rect(ctx, wx - 2, winY + winH + 1, winW + 4, 2, '#a39378');
+    px(ctx, wx - 2, winY + winH + 1, PAL.outline);
+    px(ctx, wx + winW + 1, winY + winH + 1, PAL.outline);
   };
-  drawWindow(7);
-  drawWindow(W - 7 - winW);
+  // Two windows for typical building, three for the wide Archive
+  if (W >= 110) {
+    drawWindow(8);
+    drawWindow((W - winW) / 2);
+    drawWindow(W - 8 - winW);
+  } else {
+    drawWindow(6);
+    drawWindow(W - 6 - winW);
+  }
 
-  // ---- sign band ----
-  const signW = Math.min(W - 16, 64);
+  // ---- double-door: RBY-mart-style sliding doors with frame ----
+  const dx = Math.floor(W / 2) - 8;
+  const doorW = 16, doorH = 22;
+  const dy = H - doorH - 4;
+  // archway outline
+  rect(ctx, dx - 2, dy - 2, doorW + 4, 2, PAL.outline);          // door header
+  rect(ctx, dx - 2, dy - 2, 2, doorH + 2, PAL.outline);          // left frame
+  rect(ctx, dx + doorW, dy - 2, 2, doorH + 2, PAL.outline);      // right frame
+  rect(ctx, dx, dy, doorW, doorH, '#384a7a');                    // dark glass tint
+  // split into two sliding panels
+  rect(ctx, dx + doorW / 2 - 1, dy, 2, doorH, PAL.outline);
+  // lit highlight on glass
+  rect(ctx, dx + 2, dy + 2, doorW / 2 - 3, 6, '#7dc4ff');
+  rect(ctx, dx + 2, dy + 2, doorW / 2 - 3, 2, '#bce4ff');
+  rect(ctx, dx + doorW / 2 + 1, dy + 2, doorW / 2 - 3, 6, '#7dc4ff');
+  rect(ctx, dx + doorW / 2 + 1, dy + 2, doorW / 2 - 3, 2, '#bce4ff');
+  // door handles
+  px(ctx, dx + doorW / 2 - 3, dy + doorH / 2 + 1, PAL.gold);
+  px(ctx, dx + doorW / 2 + 2, dy + doorH / 2 + 1, PAL.gold);
+  // warm glow spill onto the foundation strip
+  rect(ctx, dx, H - 4, doorW, 2, 'rgba(255,184,60,0.45)');
+  // stoop
+  rect(ctx, dx - 3, H - 2, doorW + 6, 2, '#a39378');
+  px(ctx, dx - 3, H - 2, PAL.outline);
+  px(ctx, dx + doorW + 2, H - 2, PAL.outline);
+
+  // ---- sign band on the wall (above the door) ----
+  const signW = Math.min(W - 12, 80);
   const sx = Math.floor(W / 2 - signW / 2);
   const sy = roofH + 2;
   rect(ctx, sx - 1, sy - 1, signW + 2, 12, PAL.outline);
   rect(ctx, sx, sy, signW, 10, st.accent);
-  rect(ctx, sx, sy, signW, 2, 'rgba(255,255,255,0.35)');
-  rect(ctx, sx, sy + 8, signW, 2, 'rgba(0,0,0,0.3)');
+  rect(ctx, sx, sy, signW, 2, 'rgba(255,255,255,0.5)');
+  rect(ctx, sx, sy + 8, signW, 2, 'rgba(0,0,0,0.32)');
 
-  // ---- per-building props ----
+  // ---- per-building props (preserved from previous pass) ----
   switch (st.prop) {
     case 'antenna': {
       const ax = W - 14;
-      rect(ctx, ax, -0, 2, 2, PAL.outline);
-      rect(ctx, ax, 0, 1, 14, PAL.fog);
-      rect(ctx, ax - 3, 3, 7, 1, PAL.fog);
-      rect(ctx, ax - 2, 6, 5, 1, PAL.fog);
-      // blinking light handled by Beacon entity; static base dot:
+      rect(ctx, ax, 0, 1, 14, PAL.outline);
+      rect(ctx, ax - 3, 3, 7, 1, PAL.outline);
+      rect(ctx, ax - 2, 6, 5, 1, PAL.outline);
       px(ctx, ax, 0, PAL.fire);
       break;
     }
     case 'neon': {
-      // neon border around sign
+      // RBY-Game Corner inspired neon trim around the sign
       for (let i = 0; i < signW + 2; i += 2) {
         px(ctx, sx - 1 + i, sy - 2, i % 4 === 0 ? PAL.fire : PAL.gold);
         px(ctx, sx - 1 + i, sy + 11, i % 4 === 0 ? PAL.gold : PAL.fire);
       }
-      // card suits on wall
       px(ctx, 5, roofH + 26, PAL.fire);
       px(ctx, W - 6, roofH + 26, PAL.ink);
       break;
     }
     case 'reel': {
-      // film reel at sign left
       const cx = sx - 7, cy = sy + 5;
       ctx.fillStyle = PAL.outline;
       ctx.beginPath();
       ctx.arc(cx, cy, 5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = PAL.fog;
+      ctx.fillStyle = '#7dc4ff';
       ctx.beginPath();
       ctx.arc(cx, cy, 4, 0, Math.PI * 2);
       ctx.fill();
@@ -925,46 +1028,45 @@ function buildBuilding(id: string, st: BuildingStyle): void {
     }
     case 'flags': {
       for (const fx of [4, W - 5]) {
-        rect(ctx, fx, -0, 1, 8, PAL.fog);
-        // triangle pennant
-        px(ctx, fx + 1, 0, PAL.fire);
-        px(ctx, fx + 2, 0, PAL.fire);
-        px(ctx, fx + 3, 0, PAL.fire);
-        px(ctx, fx + 1, 1, PAL.fire);
-        px(ctx, fx + 2, 1, PAL.fire);
+        rect(ctx, fx, 0, 1, 8, PAL.outline);
+        px(ctx, fx + 1, 0, PAL.fire); px(ctx, fx + 2, 0, PAL.fire); px(ctx, fx + 3, 0, PAL.fire);
+        px(ctx, fx + 1, 1, PAL.fire); px(ctx, fx + 2, 1, PAL.fire);
         px(ctx, fx + 1, 2, PAL.fire);
       }
       break;
     }
     case 'chimney': {
-      rect(ctx, 8, 0, 8, 10, PAL.outline);
-      rect(ctx, 9, 1, 6, 9, PAL.brick);
-      rect(ctx, 9, 1, 6, 2, PAL.brickDark);
-      rect(ctx, 8, 0, 8, 1, PAL.stone);
+      // RBY-style chimney rising off the roof slope (offset to one side)
+      const cwid = 6;
+      const cx = Math.floor(W / 4);
+      rect(ctx, cx, 0, cwid, roofH - 4, PAL.outline);
+      rect(ctx, cx + 1, 1, cwid - 2, roofH - 6, '#a8553a');
+      rect(ctx, cx + 1, 1, cwid - 2, 2, '#7c3a26');
+      rect(ctx, cx, 0, cwid, 1, '#3a3947');
       break;
     }
     case 'columns': {
-      // classical columns flanking the door
-      for (const cx of [dx - 8, dx + doorW + 4]) {
-        rect(ctx, cx, roofH + 4, 4, H - roofH - 6, PAL.bone);
+      for (const cx of [dx - 9, dx + doorW + 5]) {
+        rect(ctx, cx, roofH + 4, 5, H - roofH - 6, PAL.bone);
         rect(ctx, cx, roofH + 4, 1, H - roofH - 6, '#fff');
-        rect(ctx, cx + 3, roofH + 4, 1, H - roofH - 6, PLASTER_SHADE);
-        rect(ctx, cx - 1, roofH + 2, 6, 3, PAL.bone);
-        rect(ctx, cx - 1, H - 6, 6, 3, PAL.bone);
+        rect(ctx, cx + 4, roofH + 4, 1, H - roofH - 6, '#a39378');
+        rect(ctx, cx - 1, roofH + 3, 7, 3, PAL.bone);
+        rect(ctx, cx - 1, H - 6, 7, 3, PAL.bone);
+        rect(ctx, cx - 1, roofH + 3, 7, 1, PAL.outline);
+        rect(ctx, cx - 1, H - 6, 7, 1, PAL.outline);
       }
       break;
     }
     case 'orb': {
-      // glowing orb pedestal on roof center (beacon adds the pulse)
       const ox2 = Math.floor(W / 2);
-      rect(ctx, ox2 - 2, -0, 4, 4, PAL.outline);
+      rect(ctx, ox2 - 2, 0, 4, 4, PAL.outline);
       rect(ctx, ox2 - 1, 0, 2, 3, PAL.gold);
       break;
     }
   }
 
-  // ambient occlusion at wall base
-  rect(ctx, 0, H - 6, W, 1, 'rgba(0,0,0,0.12)');
+  // foundation cap shadow
+  rect(ctx, 0, H - 6, W, 1, 'rgba(0,0,0,0.18)');
 
   sprites.set(id, { canvas: cv, frame: { w: W, h: H }, cols: 1, rows: 1 });
 }
@@ -1061,57 +1163,100 @@ export function boot(): void {
   if (booted) return;
   buildTiles();
 
-  // player — fire-red jacket, brown hair
+  // Player — RBY-inspired trainer: red cap, white-trimmed red jacket,
+  // dark pants, brown boots. Brand-consistent with the portfolio's fire-red.
   buildCharacter('player', {
-    hair: '#3a2a1a', hairLight: '#5a4127',
-    jacket: PAL.fire, jacketLight: '#ff7a5c', jacketDark: PAL.ember,
-    pants: '#23222e', boots: '#3a2a1a',
-    skin: '#f0c6a8', skinShade: '#d6a787',
+    cap: PAL.fire,            // red cap crown
+    capDark: '#a32413',       // darker red for brim shadow
+    hair: '#3a2a1a',          // brown sideburns peeking
+    skin: '#f0c6a8',
+    skinDark: '#d6a787',
+    jacket: PAL.fire,         // red jacket matching cap
+    jacketTrim: '#ffffff',    // bright white trim/zipper — RBY signature
+    jacketDark: '#8c1a0a',    // shaded jacket side
+    pants: '#2a2438',         // dark indigo pants
+    boots: '#3a2a1a',         // brown boots
   });
 
-  // NPC variants
+  // Trainer-class NPC variants — each gets a distinctive silhouette so the
+  // player can tell them apart at a glance, the RBY way.
   buildCharacter('npc-overlay', {
-    hair: '#1d2a40', hairLight: '#2e4366',
-    jacket: PAL.water, jacketLight: '#7ab2f7', jacketDark: PAL.waterDim,
-    pants: '#23222e', boots: '#1a1626',
-    skin: '#e8b890', skinShade: '#ca9a74',
+    cap: '#3858a8',           // blue cap — Hiker / Sailor influence
+    capDark: '#1f3978',
+    hair: '#1d2a40',
+    skin: '#e8b890',
+    skinDark: '#ca9a74',
+    jacket: PAL.water,
+    jacketTrim: '#bce0ff',
+    jacketDark: PAL.waterDim,
+    pants: '#23222e',
+    boots: '#1a1626',
   });
   buildCharacter('npc-gamehook', {
-    hair: '#1f1c14', hairLight: '#3a3424',
-    jacket: PAL.gold, jacketLight: '#ffd266', jacketDark: PAL.bronze,
-    pants: '#2e2a22', boots: '#1a1626',
-    skin: '#f0c6a8', skinShade: '#d6a787',
-    hat: PAL.bronze,
+    cap: PAL.bronze,          // worker hat
+    capDark: '#7a4f15',
+    hair: '#1f1c14',
+    skin: '#f0c6a8',
+    skinDark: '#d6a787',
+    jacket: PAL.gold,
+    jacketTrim: '#fff0c0',
+    jacketDark: PAL.bronze,
+    pants: '#2e2a22',
+    boots: '#1a1626',
   });
   buildCharacter('npc-hyperframes', {
-    hair: '#2e2438', hairLight: '#473a54',
-    jacket: PAL.violet, jacketLight: '#c4b1ff', jacketDark: '#6f5ac4',
-    pants: '#23222e', boots: '#1a1626',
-    skin: '#e2ae8c', skinShade: '#c49070',
+    cap: PAL.violet,          // psychic-trainer purple
+    capDark: '#6f5ac4',
+    hair: '#2e2438',
+    skin: '#e2ae8c',
+    skinDark: '#c49070',
+    jacket: PAL.violet,
+    jacketTrim: '#e8dcff',
+    jacketDark: '#6f5ac4',
+    pants: '#23222e',
+    boots: '#1a1626',
   });
   buildCharacter('npc-ahshuckie', {
-    hair: '#1b3a3a', hairLight: '#2c5c5c',
-    jacket: PAL.plasma, jacketLight: '#a7f9e4', jacketDark: '#3aa890',
-    pants: '#23222e', boots: '#1a1626',
-    skin: '#f0c6a8', skinShade: '#d6a787',
+    cap: '#3aa890',           // teal scientist cap
+    capDark: '#1f5e50',
+    hair: '#1b3a3a',
+    skin: '#f0c6a8',
+    skinDark: '#d6a787',
+    jacket: PAL.plasma,
+    jacketTrim: '#ffffff',
+    jacketDark: '#3aa890',
+    pants: '#23222e',
+    boots: '#1a1626',
   });
   buildCharacter('npc-poker', {
-    hair: '#3a1a0c', hairLight: '#5c2c16',
-    jacket: '#8c2333', jacketLight: '#b53a4e', jacketDark: '#611724',
-    pants: '#23222e', boots: '#1a1626',
-    skin: '#e8b890', skinShade: '#ca9a74',
-    hat: '#1a1626',
+    cap: '#1a1626',           // black dealer's cap
+    capDark: '#0a0a12',
+    hair: '#3a1a0c',
+    skin: '#e8b890',
+    skinDark: '#ca9a74',
+    jacket: '#8c2333',
+    jacketTrim: '#ffd24c',
+    jacketDark: '#611724',
+    pants: '#23222e',
+    boots: '#1a1626',
   });
   buildCharacter('npc-contact', {
-    hair: '#2a1808', hairLight: '#46300f',
-    jacket: PAL.bone, jacketLight: '#fff7e0', jacketDark: '#c9b890',
-    pants: '#3a3424', boots: '#1a1626',
-    skin: '#f0c6a8', skinShade: '#d6a787',
+    cap: PAL.bone,
+    capDark: '#c9b890',
+    hair: '#2a1808',
+    skin: '#f0c6a8',
+    skinDark: '#d6a787',
+    jacket: PAL.bone,
+    jacketTrim: '#ffffff',
+    jacketDark: '#c9b890',
+    pants: '#3a3424',
+    boots: '#1a1626',
   });
 
-  // trees
+  // trees — RBY-style squat for interior, plus tall round/pine for borders
   buildTree('tree-round', 'round');
   buildTree('tree-pine', 'pine');
+  buildTree('tree-squat', 'rby-squat');
 
   buildFountain();
   buildLamp();

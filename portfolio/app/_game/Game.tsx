@@ -103,7 +103,8 @@ export default function Game() {
 
     const npcs = NPCS.map((def) => new NPC(def));
     const trees = TREES.map((t) => {
-      const e = new TreeEntity(t.tx, t.ty, t.kind === 'pine' ? 'tree-pine' : 'tree-round');
+      const spr = t.kind === 'pine' ? 'tree-pine' : t.kind === 'squat' ? 'tree-squat' : 'tree-round';
+      const e = new TreeEntity(t.tx, t.ty, spr);
       // mark trunk as solid
       const i = tilemap.idx(t.tx, t.ty);
       if (i >= 0) tilemap.solid[i] = true;

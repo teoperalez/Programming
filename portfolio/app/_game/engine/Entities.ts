@@ -243,11 +243,11 @@ export class NPC implements WorldRenderable, Interactable {
 export class TreeEntity implements WorldRenderable {
   readonly tx: number;
   readonly ty: number;
-  readonly sprite: 'tree-round' | 'tree-pine';
+  readonly sprite: 'tree-round' | 'tree-pine' | 'tree-squat';
   /** Phase offset so neighbouring trees don't all sway in sync. */
   private phase: number;
 
-  constructor(tx: number, ty: number, sprite: 'tree-round' | 'tree-pine' = 'tree-round') {
+  constructor(tx: number, ty: number, sprite: 'tree-round' | 'tree-pine' | 'tree-squat' = 'tree-round') {
     this.tx = tx;
     this.ty = ty;
     this.sprite = sprite;
@@ -255,29 +255,47 @@ export class TreeEntity implements WorldRenderable {
   }
 
   /** sort by trunk base so player overlaps canopy correctly */
-  get sortY(): number { return this.ty * TILE_SIZE + 30; }
+  get sortY(): number {
+    // squat trees are single-tile; tall trees are 2 tiles with the trunk
+    // anchored at ty+1, so sort by ty + 30 (matches trunk base).
+    return this.ty * TILE_SIZE + (this.sprite === 'tree-squat' ? 14 : 30);
+  }
 
   /** trunk-only collision box: bottom 4×8 px of the trunk tile */
   bounds(): import('./types').Rect {
+    if (this.sprite === 'tree-squat') {
+      return { x: this.tx * TILE_SIZE + 6, y: this.ty * TILE_SIZE + 8, w: 4, h: 6 };
+    }
     return { x: this.tx * TILE_SIZE + 6, y: this.ty * TILE_SIZE + 22, w: 4, h: 8 };
   }
 
   draw(ctx: CanvasRenderingContext2D, cam: { x: number; y: number; scale: number }, time?: number): void {
     const sheet = getSprite(this.sprite);
     const t = time ?? 0;
-    // gentle horizontal sway of the canopy region (sub-pixel via integer scaling)
+    // gentle horizontal sway
     const sway = Math.round(Math.sin((t + this.phase * 0.1) * 1.3) * 1);
+
+    if (this.sprite === 'tree-squat') {
+      // 16×16 single sprite: draw at ty, light sway applied whole-sprite.
+      const dxBase = (this.tx * TILE_SIZE - cam.x) * cam.scale;
+      const dyBase = (this.ty * TILE_SIZE - cam.y) * cam.scale;
+      ctx.drawImage(
+        sheet.canvas, 0, 0, 16, 16,
+        Math.round(dxBase + sway * cam.scale * 0.18), Math.round(dyBase),
+        16 * cam.scale, 16 * cam.scale,
+      );
+      return;
+    }
+
+    // 16×32: split into canopy (top 16) and trunk (bottom 16) so canopy sways
     const dxBase = (this.tx * TILE_SIZE - cam.x) * cam.scale;
     const dyBase = ((this.ty - 1) * TILE_SIZE - cam.y) * cam.scale;
-    // split into canopy (top half) and trunk (bottom half) so canopy sways
     const halfH = 16;
-    // canopy
     ctx.drawImage(
       sheet.canvas, 0, 0, 16, halfH,
       Math.round(dxBase + sway * cam.scale * 0.25), Math.round(dyBase),
       16 * cam.scale, halfH * cam.scale,
     );
-    // trunk + ground shadow (already baked into bottom rows)
     ctx.drawImage(
       sheet.canvas, 0, halfH, 16, 16,
       Math.round(dxBase), Math.round(dyBase + halfH * cam.scale),

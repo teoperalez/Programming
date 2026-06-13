@@ -179,7 +179,7 @@ export const SPAWN = { tx: 24, ty: 20 };
 export interface TreePlacement {
   tx: number;
   ty: number;
-  kind: 'round' | 'pine';
+  kind: 'round' | 'pine' | 'squat';
 }
 
 export const TREES: TreePlacement[] = [
@@ -209,12 +209,13 @@ export const TREES: TreePlacement[] = [
     [48, 5], [48, 7], [48, 9], [48, 11], [48, 13], [48, 15], [48, 17], [48, 23], [48, 25], [48, 27],
     [47, 6], [47, 8], [47, 12], [47, 24], [47, 26],
   ], 'pine'),
-  // scattered interior trees as landscape
-  { tx: 4, ty: 15, kind: 'round' }, { tx: 4, ty: 22, kind: 'pine' },
-  { tx: 5, ty: 20, kind: 'round' },
-  { tx: 16, ty: 13, kind: 'round' }, { tx: 32, ty: 13, kind: 'pine' },
-  { tx: 17, ty: 22, kind: 'pine' }, { tx: 33, ty: 22, kind: 'round' },
-  { tx: 41, ty: 22, kind: 'pine' }, { tx: 41, ty: 9, kind: 'round' },
+  // scattered interior trees — squat RBY style so they don't dominate the
+  // sightline. Tall trees remain at the world borders only.
+  { tx: 4, ty: 16, kind: 'squat' }, { tx: 4, ty: 22, kind: 'squat' },
+  { tx: 5, ty: 20, kind: 'squat' },
+  { tx: 16, ty: 13, kind: 'squat' }, { tx: 32, ty: 13, kind: 'squat' },
+  { tx: 17, ty: 22, kind: 'squat' }, { tx: 33, ty: 22, kind: 'squat' },
+  { tx: 41, ty: 22, kind: 'squat' }, { tx: 41, ty: 9, kind: 'squat' },
 ];
 
 function gen(coords: Array<[number, number]>, kind: 'round' | 'pine'): TreePlacement[] {

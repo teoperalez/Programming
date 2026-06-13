@@ -183,110 +183,284 @@ export default function Battle({ projectName, onClose }: Props) {
     return { dx: lunge * dir, dy: -lunge * 0.3, flash: false, shake: 0 };
   };
 
+  // current battle status line for the bottom box
+  const statusLine = (() => {
+    if (phase.kind === 'done') {
+      return result === 'win'
+        ? `${bossCfg.nickname} fainted!  ▸  VICTORY`
+        : `${player.mon.name} fainted!  ▸  DEFEAT`;
+    }
+    if (phase.kind === 'pick') return `What will ${player.mon.name.toUpperCase()} do?`;
+    if (phase.kind === 'pAttack' || phase.kind === 'pHit') {
+      return `${player.mon.name.toUpperCase()} used ${(phase as { move: Move }).move.name.toUpperCase()}!`;
+    }
+    return `Enemy ${boss.mon.name.toUpperCase()} used ${(phase as { move: Move }).move.name.toUpperCase()}!`;
+  })();
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)',
+        zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        fontFamily: '"Press Start 2P", "JetBrains Mono", monospace',
+        imageRendering: 'pixelated',
+      }}
+    >
+      <div
+        ref={arenaRef}
+        style={{
+          width: '100%', maxWidth: 800, aspectRatio: '20 / 13',
+          background: '#000000', padding: 4,
+          transform: shake ? `translate(${(Math.random() - 0.5) * shake}px, ${(Math.random() - 0.5) * shake}px)` : 'none',
+          transition: 'transform 0.05s linear',
+        }}
+      >
+        <div style={{
+          width: '100%', height: '100%',
+          background: '#ffffff', position: 'relative',
+          overflow: 'hidden',
+          border: '2px solid #000000',
+        }}>
+          {/* ===== top half: arena ===== */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, top: 0, bottom: '38%',
+            background: '#ffffff',
+            // floor line at the bottom of the arena half
+            borderBottom: '2px solid #000000',
+          }}>
+            {/* enemy HP box — top-left, rectangular with rounded right edge */}
+            <RBYHpBox
+              name={bossCfg.nickname}
+              level={50}
+              hp={boss.hp}
+              hpVis={boss.hpVis}
+              max={boss.mon.hp}
+              side="enemy"
+              style={{ position: 'absolute', top: 16, left: 16 }}
+            />
+
+            {/* enemy grass platform (top-right) */}
+            <Platform style={{ position: 'absolute', right: 36, top: '46%' }} />
+            <PixelMon mon={boss.mon} side="enemy" {...lungeFor('enemy')} />
+
+            {/* player HP box — bottom-right with EXP bar */}
+            <RBYHpBox
+              name={`${player.mon.name}`}
+              level={50}
+              hp={player.hp}
+              hpVis={player.hpVis}
+              max={player.mon.hp}
+              side="player"
+              showExp
+              style={{ position: 'absolute', bottom: 16, right: 16 }}
+            />
+
+            {/* player grass platform (bottom-left) */}
+            <Platform style={{ position: 'absolute', left: 24, bottom: 14 }} />
+            <PixelMon mon={player.mon} side="player" {...lungeFor('player')} />
+          </div>
+
+          {/* ===== bottom half: dialog/move panel ===== */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: 0, height: '38%',
+            background: '#ffffff', display: 'flex',
+            // inner padding + black border separating from arena handled above
+          }}>
+            {/* left status box */}
+            <div style={{
+              flex: 2.2,
+              borderRight: phase.kind === 'pick' && !result ? '2px solid #000' : 'none',
+              padding: '16px 20px',
+              display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+            }}>
+              <div style={{
+                fontSize: 11, color: '#000', lineHeight: 1.85, letterSpacing: '0.05em',
+              }}>
+                {statusLine}
+              </div>
+              <div style={{ fontSize: 8, color: '#666', letterSpacing: '0.1em', textAlign: 'right' }}>
+                {phase.kind === 'done'
+                  ? 'ESC > CLOSE'
+                  : phase.kind === 'pick'
+                  ? '▶ CHOOSE A MOVE'
+                  : (phase as { dmg?: number }).dmg !== undefined ? `${(phase as { dmg: number }).dmg} DMG` : ''}
+              </div>
+            </div>
+
+            {/* right panel: 2×2 move grid (only on pick), result on done */}
+            {phase.kind === 'pick' && !result && (
+              <div style={{
+                flex: 2,
+                display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'repeat(2, 1fr)',
+                gap: 0,
+              }}>
+                {moves.slice(0, 4).map((m, i) => (
+                  <button
+                    key={m.name}
+                    onClick={() => playerAttack(m)}
+                    style={{
+                      borderRight: i % 2 === 0 ? '1px solid #000' : 'none',
+                      borderBottom: i < 2 ? '1px solid #000' : 'none',
+                      background: '#ffffff',
+                      color: '#000',
+                      fontFamily: 'inherit', fontSize: 9,
+                      letterSpacing: '0.05em',
+                      cursor: 'pointer',
+                      padding: '8px',
+                      textAlign: 'left',
+                      lineHeight: 1.5,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f4ecdc'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ marginRight: 4, color: '#ff3c25' }}>▶</span>
+                      {m.name.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 7, color: '#666', marginTop: 6, marginLeft: 12 }}>
+                      {m.type.toUpperCase()} · {m.power}
+                    </div>
+                  </button>
+                ))}
+                {/* second row of attacks for 5th-8th moves */}
+              </div>
+            )}
+            {phase.kind === 'pick' && !result && moves.length > 4 && (
+              <div style={{
+                position: 'absolute', right: 16, bottom: 6,
+                fontSize: 7, color: '#666',
+              }}>
+                {moves.length} MOVES AVAILABLE
+              </div>
+            )}
+          </div>
+
+          {/* close button overlay when done */}
+          {phase.kind === 'done' && (
+            <button
+              onClick={onClose}
+              style={{
+                position: 'absolute', bottom: 18, right: 18,
+                background: '#000000', color: '#ffffff',
+                border: '2px solid #000000', padding: '8px 14px',
+                fontFamily: 'inherit', fontSize: 10, letterSpacing: '0.1em',
+                cursor: 'pointer',
+              }}
+            >
+              CLOSE [ESC]
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** RBY-style HP box: name + Lv. NN on top, "HP:" + green→yellow→red bar,
+ *  current/max numbers below, optional EXP bar. */
+function RBYHpBox({
+  name, level, hp, hpVis, max, side, showExp, style,
+}: {
+  name: string; level: number; hp: number; hpVis: number; max: number;
+  side: 'enemy' | 'player'; showExp?: boolean;
+  style?: React.CSSProperties;
+}) {
+  const pct = Math.max(0, Math.min(100, (hpVis / max) * 100));
+  const realPct = Math.max(0, Math.min(100, (hp / max) * 100));
+  const color = pct <= 20 ? '#ff3c25' : pct <= 50 ? '#ffb800' : '#3ec05c';
   return (
     <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(7,7,11,0.92)', backdropFilter: 'blur(12px)',
-      zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      ...style,
+      width: 200,
+      background: '#000',
+      padding: 3,
     }}>
       <div style={{
-        width: '100%', maxWidth: 780, background: '#0e0d18', border: '3px solid #f4ecdc', borderRadius: 8,
-        boxShadow: '0 30px 80px rgba(0,0,0,0.7)',
-        fontFamily: 'JetBrains Mono, monospace', color: '#f4ecdc', overflow: 'hidden',
-        transform: shake ? `translate(${(Math.random() - 0.5) * shake}px, ${(Math.random() - 0.5) * shake}px)` : 'none',
-        transition: 'transform 0.05s linear',
+        background: '#ffffff',
+        border: '2px solid #000',
+        padding: '6px 10px 8px',
+        color: '#000',
+        fontFamily: '"Press Start 2P", monospace',
       }}>
-        {/* boss bar */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #2b2a36' }}>
-          <HpBar name={bossCfg.nickname} mon={boss.mon} hp={boss.hp} hpVis={boss.hpVis} side="enemy" />
-        </div>
-
-        {/* arena */}
-        <div ref={arenaRef} style={{
-          position: 'relative', minHeight: 280,
-          background: 'linear-gradient(180deg, #3a7eb5 0%, #6cb53a 35%, #4a8a26 100%)',
-          imageRendering: 'pixelated',
-          overflow: 'hidden',
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+          fontSize: 9, letterSpacing: '0.05em', marginBottom: 5,
         }}>
-          {/* sky horizon clouds */}
-          <div style={{ position: 'absolute', left: 16, top: 12, width: 28, height: 6, background: 'rgba(255,255,255,0.5)', borderRadius: 4 }}/>
-          <div style={{ position: 'absolute', right: 24, top: 28, width: 36, height: 5, background: 'rgba(255,255,255,0.35)', borderRadius: 4 }}/>
-          {/* grass platforms */}
-          <div style={{ position: 'absolute', right: 32, top: 84, width: 120, height: 18, background: 'rgba(0,0,0,0.25)', borderRadius: '50%', filter: 'blur(3px)' }}/>
-          <div style={{ position: 'absolute', left: 32, bottom: 32, width: 140, height: 22, background: 'rgba(0,0,0,0.25)', borderRadius: '50%', filter: 'blur(3px)' }}/>
-
-          <PixelMon mon={boss.mon} side="enemy" {...lungeFor('enemy')} />
-          <PixelMon mon={player.mon} side="player" {...lungeFor('player')} />
-
-          {/* log overlay */}
+          <span style={{
+            maxWidth: 120,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{name.toUpperCase()}</span>
+          <span style={{ fontSize: 8 }}>:L{level}</span>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          <span style={{ fontSize: 8, color: '#000' }}>HP:</span>
           <div style={{
-            position: 'absolute', right: 12, bottom: 8, maxWidth: '52%',
-            padding: '8px 12px', background: 'rgba(7,7,11,0.65)', borderRadius: 6,
-            border: '1px solid rgba(244,236,220,0.18)',
+            flex: 1, height: 6, background: '#dcd6c2',
+            border: '1px solid #000', position: 'relative', overflow: 'hidden',
           }}>
-            {log.slice(-3).map((l, i, arr) => (
-              <div key={i} style={{ fontSize: 11, lineHeight: 1.5, color: i === arr.length - 1 ? '#f4ecdc' : '#8a8377' }}>
-                ▸ {l}
-              </div>
-            ))}
+            {/* delta sliver (just-lost portion) */}
+            <div style={{
+              position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`,
+              background: 'rgba(255,60,37,0.35)',
+            }} />
+            <div style={{
+              position: 'absolute', left: 0, top: 0, bottom: 0, width: `${realPct}%`,
+              background: color, transition: 'background 0.3s',
+            }} />
           </div>
         </div>
-
-        {/* player bar */}
-        <div style={{ padding: '20px 24px', borderTop: '1px solid #2b2a36' }}>
-          <HpBar name={`YOU · ${player.mon.name}`} mon={player.mon} hp={player.hp} hpVis={player.hpVis} side="player" />
-        </div>
-
-        {/* moves */}
-        {phase.kind === 'pick' && !result && (
-          <div style={{ padding: '14px 18px', borderTop: '1px solid #2b2a36', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
-            {moves.map((m) => (
-              <button
-                key={m.name}
-                onClick={() => playerAttack(m)}
-                style={{
-                  fontFamily: 'JetBrains Mono, monospace', fontSize: 12,
-                  padding: '10px 14px',
-                  background: '#14131b',
-                  border: '1px solid rgba(244,236,220,0.2)',
-                  borderRadius: 6,
-                  color: '#f4ecdc',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  letterSpacing: '0.05em',
-                  transition: 'all 0.1s',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ff3c25'; e.currentTarget.style.background = '#1a1620'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(244,236,220,0.2)'; e.currentTarget.style.background = '#14131b'; }}
-              >
-                <span style={{ color: '#ff3c25', marginRight: 8 }}>▶</span>
-                {m.name} · <span style={{ color: '#8a8377', fontSize: 10 }}>{m.power} bp · {m.type}</span>
-              </button>
-            ))}
+        {side === 'player' && (
+          <div style={{
+            display: 'flex', justifyContent: 'flex-end',
+            fontSize: 8, marginTop: 5,
+          }}>
+            <span>{Math.round(hpVis).toString().padStart(3, ' ')}/{max}</span>
           </div>
         )}
-        {(phase.kind === 'pAttack' || phase.kind === 'pHit' || phase.kind === 'eAttack' || phase.kind === 'eHit') && (
-          <div style={{ padding: 16, textAlign: 'center', color: '#8a8377', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-            {phase.kind === 'pAttack' && 'attacking…'}
-            {phase.kind === 'pHit' && 'impact!'}
-            {phase.kind === 'eAttack' && 'enemy is attacking…'}
-            {phase.kind === 'eHit' && 'taking damage…'}
-          </div>
-        )}
-        {phase.kind === 'done' && (
-          <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ fontSize: 14, color: result === 'win' ? '#6cf4d2' : '#ff3c25' }}>
-              {result === 'win' ? '★ VICTORY · You read the type chart right.' : '× DEFEAT · Try a different matchup.'}
-            </span>
-            <button onClick={onClose} style={{
-              padding: '8px 16px', background: '#ff3c25', color: '#07070b', border: 'none',
-              borderRadius: 6, cursor: 'pointer', fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase',
+        {showExp && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6, marginTop: 4,
+          }}>
+            <span style={{ fontSize: 7, color: '#000' }}>EXP:</span>
+            <div style={{
+              flex: 1, height: 3, background: '#dcd6c2',
+              border: '1px solid #000', position: 'relative', overflow: 'hidden',
             }}>
-              close [esc]
-            </button>
+              <div style={{
+                position: 'absolute', left: 0, top: 0, bottom: 0, width: '64%',
+                background: '#3a7eb5',
+              }} />
+            </div>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Slanted "grass platform" oval that the combatants stand on. */
+function Platform({ style }: { style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      width: 160, height: 14,
+      background: '#000',
+      borderRadius: '50%',
+      transform: 'skewX(-12deg)',
+      position: 'relative',
+      ...style,
+    }}>
+      <div style={{
+        position: 'absolute', left: 2, top: 2, right: 2, bottom: 2,
+        background: '#cda06a',
+        borderRadius: '50%',
+      }} />
+      <div style={{
+        position: 'absolute', left: 6, top: 4, right: 6, bottom: 6,
+        background: '#e2bb87',
+        borderRadius: '50%',
+      }} />
     </div>
   );
 }
@@ -296,27 +470,6 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-function HpBar({ name, mon, hp, hpVis, side }: { name: string; mon: Mon; hp: number; hpVis: number; side: 'enemy' | 'player' }) {
-  const pct = (hpVis / mon.hp) * 100;
-  const realPct = (hp / mon.hp) * 100;
-  const color = pct < 25 ? '#ff3c25' : pct < 50 ? '#ffb800' : '#6cf4d2';
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-        <span style={{ color: side === 'enemy' ? '#ff3c25' : '#f4ecdc' }}>{name}</span>
-        <span style={{ color: '#8a8377' }}>HP {Math.round(hpVis)} / {mon.hp}</span>
-      </div>
-      <div style={{
-        height: 10, background: 'rgba(244,236,220,0.06)', borderRadius: 4, overflow: 'hidden',
-        border: '1px solid #2b2a36', position: 'relative',
-      }}>
-        {/* delta sliver */}
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: 'rgba(255,60,37,0.35)' }}/>
-        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${realPct}%`, background: color, transition: 'width 0.05s linear' }}/>
-      </div>
-    </div>
-  );
-}
 
 function PixelMon({ mon, side, dx, dy, flash, shake }: {
   mon: Mon; side: 'enemy' | 'player';
