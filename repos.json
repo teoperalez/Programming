@@ -16,6 +16,7 @@
     { "folder": "GSCNewLayout",                "remote": "https://github.com/teoperalez/GSCNewLayout.git",                "branch": "test" },
     { "folder": "IRLPC Hyperframes",           "remote": "https://github.com/teoperalez/IRLPC-Hyperframes.git",           "branch": "main" },
     { "folder": "MSCS",                        "remote": "https://github.com/teoperalez/MSCS.git",                        "branch": "main" },
+    { "folder": "PatreonVideoUploader",        "remote": "https://github.com/teoperalez/PatreonVideoUploader.git",        "branch": "main" },
     { "folder": "pokemon-exp-calculator",      "remote": "https://github.com/teoperalez/pokemon-exp-calculator.git",      "branch": "main" },
     { "folder": "resolve-mcp",                 "remote": "https://github.com/teoperalez/resolve-mcp.git",                 "branch": "main" },
     { "folder": "resolve-mcp/_data",           "remote": "https://github.com/teoperalez/resolve-mcp-data.git",            "branch": "main" },
